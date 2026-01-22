@@ -1,0 +1,13 @@
+/*
+Theme Name: ProPlus Learning Opportunities
+Theme URI: https://example.com/
+Author: Bappa Sutradhar
+Description: Homepage theme matching the provided "Learning opportunities" layout (sidebar filters + course cards grid).
+Version: 1.0.0
+License: GNU General Public License v2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
+Text Domain: proplus-learning
+Tags: custom, responsive, education
+*/
+
+@import url("assets/css/theme.css");
