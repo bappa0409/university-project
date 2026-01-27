@@ -17,9 +17,8 @@
 html, body { margin: 0; padding: 0 }
 
 body {
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+  font-family: "Raleway", sans-serif;;
   color: var(--text);
-  /* background: var(--bg); */
 }
 p{
   margin: 8px 0;
@@ -465,7 +464,7 @@ a { color: inherit; text-decoration: none }
 /* ✅ Sticky sidebar (no inner scroll) */
 .sidebar{
   position: sticky;
-  top: 84px;          /* header height অনুযায়ী adjust করুন */
+  top: 65px;          /* header height অনুযায়ী adjust করুন */
   align-self: start;
   z-index: 5;
 }
@@ -1336,3 +1335,4 @@ a { color: inherit; text-decoration: none }
   .cards { grid-template-columns: 1fr; }
   .main-nav { display: none; }
 }
+

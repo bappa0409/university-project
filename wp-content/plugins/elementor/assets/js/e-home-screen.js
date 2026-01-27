@@ -2581,7 +2581,7 @@ var HeaderSection = function HeaderSection(props) {
     }
   }, /*#__PURE__*/_react.default.createElement(_Typography.default, {
     variant: "h5"
-  }, (0, _i18n.__)('Home', 'elementor')), /*#__PURE__*/_react.default.createElement(_Button.default, {
+  }, (0, _i18n.__)('Quick Start', 'elementor')), /*#__PURE__*/_react.default.createElement(_Button.default, {
     variant: "contained",
     size: "medium",
     color: "primary",

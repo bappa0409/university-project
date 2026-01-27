@@ -18406,7 +18406,7 @@ var Onboarding = exports["default"] = /*#__PURE__*/(0, _createClass2.default)(fu
   _router.default.addRoute({
     path: '/onboarding/*',
     component: React.lazy(function () {
-      return Promise.all(/*! import() | onboarding */[__webpack_require__.e("app_modules_onboarding_assets_js_utils_modules_post-onboarding-tracker_js"), __webpack_require__.e("onboarding")]).then(__webpack_require__.bind(__webpack_require__, /*! ./app */ "../app/modules/onboarding/assets/js/app.js"));
+      return Promise.all(/*! import() | onboarding */[__webpack_require__.e("vendors-node_modules_mixpanel-browser_dist_mixpanel_module_js"), __webpack_require__.e("app_modules_onboarding_assets_js_utils_modules_post-onboarding-tracker_js"), __webpack_require__.e("onboarding")]).then(__webpack_require__.bind(__webpack_require__, /*! ./app */ "../app/modules/onboarding/assets/js/app.js"));
     })
   });
 });
@@ -29235,8 +29235,9 @@ module.exports = ReactDOM;
 /******/ 			// return url for filenames not based on template
 /******/ 			if (chunkId === "vendors-node_modules_react-query_devtools_index_js") return "e459c6c89c0c0899c850.bundle.js";
 /******/ 			if (chunkId === "kit-library") return "" + chunkId + ".6fbef525614a7b49f293.bundle.js";
-/******/ 			if (chunkId === "app_modules_onboarding_assets_js_utils_modules_post-onboarding-tracker_js") return "b2e8e6071c9bc14c04e4.bundle.js";
-/******/ 			if (chunkId === "onboarding") return "" + chunkId + ".b9c68f81fb52ea524d8b.bundle.js";
+/******/ 			if (chunkId === "vendors-node_modules_mixpanel-browser_dist_mixpanel_module_js") return "e4d209bf3a704ff88e1a.bundle.js";
+/******/ 			if (chunkId === "app_modules_onboarding_assets_js_utils_modules_post-onboarding-tracker_js") return "b423d91809cf7e0cb8b0.bundle.js";
+/******/ 			if (chunkId === "onboarding") return "" + chunkId + ".63cdf72a450944ebd5f7.bundle.js";
 /******/ 			// return url for filenames based on template
 /******/ 			return undefined;
 /******/ 		};

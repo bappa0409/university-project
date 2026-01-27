@@ -54,6 +54,12 @@ if (!function_exists('ppl_enqueue_assets')) {
     wp_enqueue_style('ppl-theme', get_template_directory_uri() . '/assets/css/theme.css', [], $ver);
     wp_enqueue_style('dashicons');
     wp_enqueue_script('ppl-theme', get_template_directory_uri() . '/assets/js/theme.js', [], $ver, true);
+     wp_enqueue_style(
+      'ppl-raleway',
+      'https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;600;700;800;900&display=swap',
+      [],
+      null
+    );
   }
   add_action('wp_enqueue_scripts', 'ppl_enqueue_assets');
 }

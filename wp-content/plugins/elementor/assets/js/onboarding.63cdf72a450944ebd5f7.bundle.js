@@ -3456,6 +3456,7 @@ var _react = __webpack_require__(/*! react */ "react");
 var _propTypes = _interopRequireDefault(__webpack_require__(/*! prop-types */ "../node_modules/prop-types/index.js"));
 var _context = __webpack_require__(/*! ../context/context */ "../app/modules/onboarding/assets/js/context/context.js");
 var _onboardingEventTracking = __webpack_require__(/*! ./onboarding-event-tracking */ "../app/modules/onboarding/assets/js/utils/onboarding-event-tracking.js");
+var _eventDispatcher = _interopRequireDefault(__webpack_require__(/*! ./modules/event-dispatcher */ "../app/modules/onboarding/assets/js/utils/modules/event-dispatcher.js"));
 function Connect(props) {
   var _useContext = (0, _react.useContext)(_context.OnboardingContext),
     state = _useContext.state,
@@ -3469,6 +3470,7 @@ function Connect(props) {
     _onboardingEventTracking.OnboardingEventTracking.updateLibraryConnectConfig(data);
     if (isTrackingOptedInConnect) {
       elementorCommon.config.editor_events.can_send_events = true;
+      _eventDispatcher.default.initializeAndEnableTracking();
       _onboardingEventTracking.OnboardingEventTracking.sendConnectionSuccessEvents(data);
     }
   }, []);
@@ -5281,4 +5283,4 @@ var addExperimentTrackingToUrl = exports.addExperimentTrackingToUrl = function a
 /***/ })
 
 }]);
-//# sourceMappingURL=onboarding.b9c68f81fb52ea524d8b.bundle.js.map
+//# sourceMappingURL=onboarding.63cdf72a450944ebd5f7.bundle.js.map

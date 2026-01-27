@@ -1,9 +1,8 @@
 <?php
 /**
  * =========================================================
- * front-page.php (FULL) - Modern cards + filters + ✅ /page/3/ pagination
- * - Bulletproof paged detection (paged/page)
- * - Pagination base fixed for subdirectory installs using get_pagenum_link()
+ * front-page.php (FULL) - Modern cards + filters + ✅ pagination (NO 404)
+ * - Uses custom query param: cpage (NOT paged) to avoid WP static front page 404
  * - Keeps filters via add_args
  * =========================================================
  */
@@ -37,10 +36,8 @@ $course_type = function_exists('ppl_get_arr') ? ppl_get_arr('course_type') : [];
 $app_from    = function_exists('ppl_get_date') ? ppl_get_date('app_from') : '';
 $app_to      = function_exists('ppl_get_date') ? ppl_get_date('app_to') : '';
 
-/* ---------- ✅ Bulletproof paged detection ---------- */
-$paged = (int) get_query_var('paged');
-if (!$paged) $paged = (int) get_query_var('page');
-if (!$paged) $paged = 1;
+/* ---------- ✅ IMPORTANT: use custom param to avoid WP static front page 404 ---------- */
+$paged = isset($_GET['cpage']) ? max(1, (int) $_GET['cpage']) : 1;
 
 /* ---------- Build WP_Query ---------- */
 $tax_query = ['relation' => 'AND'];
@@ -87,7 +84,7 @@ $args = [
   'post_type'      => 'course',
   'post_status'    => 'publish',
   'posts_per_page' => 24,
-  'paged'          => $paged,
+  'paged'          => $paged, // ✅ this is for the custom WP_Query only
 ];
 
 if ($search !== '') $args['s'] = $search;
@@ -171,8 +168,14 @@ $meta_icon = function ($label) {
         <div class="results-head">
           <div>
             <div class="results-title">Results</div>
+            <?php
+            $per_page = (int) $q->get('posts_per_page');
+            $current_page = max(1, (int) $paged);
+            $total_found = (int) $q->found_posts;
+            $shown = min($current_page * $per_page, $total_found);
+            ?>
             <div class="results-sub">
-              <?php echo esc_html($q->found_posts); ?> of <?php echo esc_html($total_all); ?> courses
+              <?php echo esc_html($shown); ?> of <?php echo esc_html($total_found); ?> courses
             </div>
           </div>
 
@@ -288,17 +291,19 @@ $meta_icon = function ($label) {
           </div>
 
           <?php
-          // ✅ FIXED: Pretty pagination that works in subdirectory installs + keeps filters
-          $big = 999999999;
+          // ✅ Pagination using cpage (avoids WP 404 on static front page)
           $links = paginate_links([
-            'base'      => str_replace($big, '%#%', esc_url(get_pagenum_link($big))),
+            'base'      => add_query_arg('cpage', '%#%'),
             'format'    => '',
             'current'   => max(1, (int) $paged),
             'total'     => max(1, (int) $q->max_num_pages),
             'type'      => 'array',
-            'add_args'  => array_filter($_GET),
-            'prev_text' => '‹',
-            'next_text' => '›',
+            // keep filters, but don't duplicate cpage
+            'add_args'  => array_filter($_GET, function ($v, $k) {
+              return $k !== 'cpage' && $v !== '';
+            }, ARRAY_FILTER_USE_BOTH),
+            'prev_text' => 'Previous',
+            'next_text' => 'Next',
           ]);
           ?>
 
