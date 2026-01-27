@@ -5,15 +5,6 @@
  * CPT + Tax + MetaBox + Filters helpers + Flatpickr
  * + ✅ University Logo field (taxonomy term meta)
  * + ✅ Footer university logos output
- *
- * ✅ UPDATED:
- * - Removed: course_area, course_flagship, course_learning_pathway
- * - Renamed labels:
- *   course_format => Modality
- *   course_target => Study Program
- * - Added: course_semester_availability (Semester availability)
- * - Added: course_type (Course type)
- * - ✅ Added pre_get_posts filter so ALL sidebar filters work dynamically
  * =========================================================
  */
 
@@ -753,3 +744,132 @@ add_action('init', function () {
   wp_redirect(wp_get_referer());
   exit;
 });
+
+
+/**
+ * =========================================================
+ * ✅ ADMIN SEED COURSES (NO WP-CLI)
+ * Tools → Seed Courses
+ * =========================================================
+ */
+
+add_action('admin_menu', function () {
+  add_management_page(
+    'Seed Courses',
+    'Seed Courses',
+    'manage_options',
+    'ppl-seed-courses',
+    'ppl_seed_courses_admin_page'
+  );
+});
+
+function ppl_seed_courses_admin_page()
+{
+  if (!current_user_can('manage_options')) return;
+
+  if (isset($_POST['ppl_seed_courses_run'])) {
+    ppl_seed_courses_run((int)($_POST['count'] ?? 50));
+    echo '<div class="updated notice"><p>✅ Courses seeded successfully.</p></div>';
+  }
+  ?>
+  <div class="wrap">
+    <h1>Seed Courses</h1>
+
+    <form method="post">
+      <p>
+        <label>
+          Number of courses:
+          <input type="number" name="count" value="100" min="1" max="500">
+        </label>
+      </p>
+
+      <p>
+        <button type="submit" name="ppl_seed_courses_run" class="button button-primary">
+          🚀 Clean & Seed Courses
+        </button>
+      </p>
+
+      <p style="color:#b32d2e;">
+        ⚠️ This will DELETE all existing courses before inserting new ones.
+      </p>
+    </form>
+  </div>
+  <?php
+}
+
+function ppl_seed_courses_run($count = 50)
+{
+  // ✅ DATA
+  $data = [
+    'course_university' => [
+      'Bialystock University of Technology',
+      'Ivan Franko National University of Lviv (Assoc. Partner)',
+      'University of Banja Luka',
+      'University of Craiova',
+      'University of Girona',
+      'University of Nova Gorica',
+      'University of Perpignan Via Domitia',
+      'University of Ruse',
+      'University of Technology Chemnitz',
+      'University of Udine',
+    ],
+    'course_semester_availability' => ['Summer', 'Winter'],
+    'course_type' => ['Lecture', 'Microcredential', 'Seminar'],
+    'course_format' => ['Blended', 'Hybrid', 'On Campus', 'Online'],
+    'course_target' => ['BA', 'MA', 'PhD', 'Staff'],
+    'course_language' => ['DE', 'EN', 'FR', 'IT'],
+  ];
+
+  // ✅ CLEAN OLD COURSES
+  $old = get_posts([
+    'post_type' => 'course',
+    'posts_per_page' => -1,
+    'fields' => 'ids',
+    'post_status' => 'any',
+  ]);
+  foreach ($old as $pid) {
+    wp_delete_post($pid, true);
+  }
+
+  // ✅ ENSURE TERMS
+  foreach ($data as $tax => $names) {
+    foreach ($names as $name) {
+      if (!term_exists($name, $tax)) {
+        wp_insert_term($name, $tax);
+      }
+    }
+  }
+
+  $pick = function ($tax) {
+    $terms = get_terms(['taxonomy' => $tax, 'hide_empty' => false]);
+    if (empty($terms) || is_wp_error($terms)) return [];
+    return [(int)$terms[array_rand($terms)]->term_id];
+  };
+
+  $titles = ['Intro to', 'Advanced', 'Applied', 'Seminar on', 'Microcredential in'];
+  $subjects = ['AI', 'Data Science', 'Cybersecurity', 'Cloud Computing', 'IoT', 'Sustainability'];
+
+  for ($i = 1; $i <= $count; $i++) {
+
+    $post_id = wp_insert_post([
+      'post_type' => 'course',
+      'post_title' => $titles[array_rand($titles)] . ' ' . $subjects[array_rand($subjects)] . " #{$i}",
+      'post_content' => 'Auto seeded course.',
+      'post_status' => 'publish',
+    ]);
+
+    if (!$post_id || is_wp_error($post_id)) continue;
+
+    wp_set_post_terms($post_id, $pick('course_university'), 'course_university');
+    wp_set_post_terms($post_id, $pick('course_format'), 'course_format');
+    wp_set_post_terms($post_id, $pick('course_target'), 'course_target');
+    wp_set_post_terms($post_id, $pick('course_language'), 'course_language');
+    wp_set_post_terms($post_id, $pick('course_semester_availability'), 'course_semester_availability');
+    wp_set_post_terms($post_id, $pick('course_type'), 'course_type');
+
+    update_post_meta($post_id, 'course_status', rand(0, 1) ? 'OPEN' : 'CLOSED');
+    update_post_meta($post_id, 'ects_number', rand(1, 30)); // ✅ 1–30
+    update_post_meta($post_id, 'course_reg', date('Y-m-d', strtotime('+' . rand(5, 120) . ' days')));
+    update_post_meta($post_id, 'course_contact_email', 'info@example.com');
+  }
+}

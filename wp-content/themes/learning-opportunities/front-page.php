@@ -1,9 +1,10 @@
 <?php
 /**
  * =========================================================
- * front-page.php (FULL) - Modern cards + only backend fields
- * - Chips show selected search + filters (UI only)
- * - Cards show ONLY existing backend values
+ * front-page.php (FULL) - Modern cards + filters + ✅ /page/3/ pagination
+ * - Bulletproof paged detection (paged/page)
+ * - Pagination base fixed for subdirectory installs using get_pagenum_link()
+ * - Keeps filters via add_args
  * =========================================================
  */
 if (!defined('ABSPATH')) {
@@ -26,26 +27,31 @@ if ($hero_img_id) {
 $search = isset($_GET['search']) ? sanitize_text_field(wp_unslash($_GET['search'])) : '';
 $ects   = isset($_GET['ects']) ? (int) $_GET['ects'] : 0;
 
-$university = ppl_get_arr('university');
-$format     = ppl_get_arr('format');                 // Modality
-$target     = ppl_get_arr('target');                 // Study Program
-$language   = ppl_get_arr('language');
-$semester_availability = ppl_get_arr('semester_availability'); // NEW
-$course_type = ppl_get_arr('course_type');                     // NEW
+$university = function_exists('ppl_get_arr') ? ppl_get_arr('university') : [];
+$format     = function_exists('ppl_get_arr') ? ppl_get_arr('format') : [];   // Modality
+$target     = function_exists('ppl_get_arr') ? ppl_get_arr('target') : [];   // Study Program
+$language   = function_exists('ppl_get_arr') ? ppl_get_arr('language') : [];
+$semester_availability = function_exists('ppl_get_arr') ? ppl_get_arr('semester_availability') : [];
+$course_type = function_exists('ppl_get_arr') ? ppl_get_arr('course_type') : [];
 
-$app_from    = ppl_get_date('app_from');
-$app_to      = ppl_get_date('app_to');
+$app_from    = function_exists('ppl_get_date') ? ppl_get_date('app_from') : '';
+$app_to      = function_exists('ppl_get_date') ? ppl_get_date('app_to') : '';
+
+/* ---------- ✅ Bulletproof paged detection ---------- */
+$paged = (int) get_query_var('paged');
+if (!$paged) $paged = (int) get_query_var('page');
+if (!$paged) $paged = 1;
 
 /* ---------- Build WP_Query ---------- */
 $tax_query = ['relation' => 'AND'];
 
-if ($university) $tax_query[] = ['taxonomy' => 'course_university', 'field' => 'slug', 'terms' => $university];
-if ($format)     $tax_query[] = ['taxonomy' => 'course_format', 'field' => 'slug', 'terms' => $format];
-if ($target)     $tax_query[] = ['taxonomy' => 'course_target', 'field' => 'slug', 'terms' => $target];
-if ($language)   $tax_query[] = ['taxonomy' => 'course_language', 'field' => 'slug', 'terms' => $language];
+if (!empty($university)) $tax_query[] = ['taxonomy' => 'course_university', 'field' => 'slug', 'terms' => $university];
+if (!empty($format))     $tax_query[] = ['taxonomy' => 'course_format', 'field' => 'slug', 'terms' => $format];
+if (!empty($target))     $tax_query[] = ['taxonomy' => 'course_target', 'field' => 'slug', 'terms' => $target];
+if (!empty($language))   $tax_query[] = ['taxonomy' => 'course_language', 'field' => 'slug', 'terms' => $language];
 
-if ($semester_availability) $tax_query[] = ['taxonomy' => 'course_semester_availability', 'field' => 'slug', 'terms' => $semester_availability];
-if ($course_type)           $tax_query[] = ['taxonomy' => 'course_type', 'field' => 'slug', 'terms' => $course_type];
+if (!empty($semester_availability)) $tax_query[] = ['taxonomy' => 'course_semester_availability', 'field' => 'slug', 'terms' => $semester_availability];
+if (!empty($course_type))           $tax_query[] = ['taxonomy' => 'course_type', 'field' => 'slug', 'terms' => $course_type];
 
 $meta_query = [];
 
@@ -80,8 +86,8 @@ if ($app_to !== '') {
 $args = [
   'post_type'      => 'course',
   'post_status'    => 'publish',
-  'posts_per_page' => 12,
-  'paged'          => max(1, (int) get_query_var('paged')),
+  'posts_per_page' => 24,
+  'paged'          => $paged,
 ];
 
 if ($search !== '') $args['s'] = $search;
@@ -94,7 +100,7 @@ $q = new WP_Query($args);
 $all_count = wp_count_posts('course');
 $total_all = isset($all_count->publish) ? (int)$all_count->publish : 0;
 
-/* ---------- Chips for selected filters (display only) ---------- */
+/* ---------- Chips ---------- */
 $chips = [];
 
 $add_term_chips = function ($slugs, $tax) use (&$chips) {
@@ -105,8 +111,8 @@ $add_term_chips = function ($slugs, $tax) use (&$chips) {
 };
 
 $add_term_chips($university, 'course_university');
-$add_term_chips($format, 'course_format'); // Modality
-$add_term_chips($target, 'course_target'); // Study Program
+$add_term_chips($format, 'course_format');
+$add_term_chips($target, 'course_target');
 $add_term_chips($language, 'course_language');
 $add_term_chips($semester_availability, 'course_semester_availability');
 $add_term_chips($course_type, 'course_type');
@@ -115,7 +121,6 @@ $chips = array_values(array_unique(array_filter($chips)));
 
 /**
  * Helper: terms list for a post + taxonomy
- * returns array of term names
  */
 $get_term_names = function ($post_id, $tax) {
   $out = [];
@@ -129,29 +134,21 @@ $get_term_names = function ($post_id, $tax) {
 /**
  * Helper: icon for meta pill
  */
-$meta_icon = function ($label) use ($course_type) {
+$meta_icon = function ($label) {
   $v = strtolower(trim((string)$label));
 
-  // modality hints
   if (strpos($v, 'online') !== false) return '🖥️';
   if (strpos($v, 'hybrid') !== false) return '🔁';
   if (strpos($v, 'blended') !== false) return '🧩';
-  if (strpos($v, 'on-site') !== false || strpos($v, 'onsite') !== false || strpos($v, 'campus') !== false) return '🏫';
+  if (strpos($v, 'on campus') !== false || strpos($v, 'campus') !== false) return '🏫';
 
-  // language hints (optional)
   $upper = strtoupper(trim((string)$label));
   if (in_array($upper, ['EN', 'FR', 'DE', 'IT', 'PL', 'CZ', 'DA', 'RU', 'ES', 'PT'], true)) return '🌐';
+  if (in_array($upper, ['BA', 'MA', 'PHD', 'STAFF'], true)) return '🎓';
 
-  
-  // study program (optional)
-  $studyProgram = strtoupper(trim((string)$label));
-  if (in_array($studyProgram, ['BA', 'MA', 'PHD', 'STAFF'], true)) return '🎓';
+  if (strpos($upper, 'SUMMER') !== false) return '🌞';
+  if (strpos($upper, 'WINTER') !== false) return '🥶';
 
-  
-  // course type (optional)
-  $course_type = strtoupper(trim((string)$label));
-   if (strpos($course_type, 'SUMMER') !== false) return '🌞';
-  if (strpos($course_type, 'WINTER') !== false) return '🥶';
   return '•';
 };
 ?>
@@ -159,9 +156,7 @@ $meta_icon = function ($label) use ($course_type) {
 <main class="page">
   <section class="hero" style="<?php echo $hero_url ? ' --hero-bg: url(' . esc_url($hero_url) . '); --hero-blur: ' . esc_attr($hero_blur) . 'px;' : ''; ?>">
     <div class="container">
-      <div class="breadcrumbs">
-        <span>Home</span>
-      </div>
+      <div class="breadcrumbs"><span>Home</span></div>
       <h1 class="hero-title">Learning opportunities</h1>
     </div>
     <div class="hero-overlay" aria-hidden="true"></div>
@@ -172,6 +167,7 @@ $meta_icon = function ($label) use ($course_type) {
       <?php get_sidebar(); ?>
 
       <section class="results" aria-label="Results">
+
         <div class="results-head">
           <div>
             <div class="results-title">Results</div>
@@ -182,18 +178,12 @@ $meta_icon = function ($label) use ($course_type) {
 
           <div class="results-tools">
             <?php if ($search !== ''): ?>
-              <span class="chip chip-x">
-                <span class="chip-text"><?php echo esc_html($search); ?></span>
-                <button type="button" class="chip-close" aria-label="Remove tag">×</button>
-              </span>
+              <span class="chip chip-x"><span class="chip-text"><?php echo esc_html($search); ?></span></span>
             <?php endif; ?>
 
             <?php if (!empty($chips)): ?>
               <?php foreach ($chips as $c): ?>
-                <span class="chip chip-x">
-                  <span class="chip-text"><?php echo esc_html($c); ?></span>
-                  <button type="button" class="chip-close" aria-label="Remove tag">×</button>
-                </span>
+                <span class="chip chip-x"><span class="chip-text"><?php echo esc_html($c); ?></span></span>
               <?php endforeach; ?>
             <?php endif; ?>
           </div>
@@ -211,18 +201,13 @@ $meta_icon = function ($label) use ($course_type) {
               <?php
               $id = get_the_ID();
 
-              // status
               $status = get_post_meta($id, 'course_status', true);
               $status = $status ? strtoupper($status) : 'CLOSED';
               $statusClass = ($status === 'OPEN') ? 'open' : 'closed';
 
-              // ects
               $ects_number = (int) get_post_meta($id, 'ects_number', true);
-
-              // registration up to
               $reg = get_post_meta($id, 'course_reg', true);
 
-              // university term + logo (term meta)
               $uni_terms = get_the_terms($id, 'course_university');
               $uni_name  = ($uni_terms && !is_wp_error($uni_terms)) ? $uni_terms[0]->name : '';
               $uni_logo  = '';
@@ -234,13 +219,12 @@ $meta_icon = function ($label) use ($course_type) {
 
               $fallback_uni_icon = 'https://s.w.org/images/core/emoji/17.0.2/svg/1f3db.svg';
 
-              // meta pills (only existing)
               $pill_groups = [];
 
-              $mods = $get_term_names($id, 'course_format'); // Modality
+              $mods = $get_term_names($id, 'course_format');
               if (!empty($mods)) $pill_groups[] = ['label' => 'Modality', 'items' => $mods];
 
-              $progs = $get_term_names($id, 'course_target'); // Study Program
+              $progs = $get_term_names($id, 'course_target');
               if (!empty($progs)) $pill_groups[] = ['label' => 'Study Program', 'items' => $progs];
 
               $sems = $get_term_names($id, 'course_semester_availability');
@@ -252,37 +236,25 @@ $meta_icon = function ($label) use ($course_type) {
               $langs = $get_term_names($id, 'course_language');
               if (!empty($langs)) $pill_groups[] = ['label' => 'Language', 'items' => $langs];
 
-              // title trim
               $title = get_the_title();
-              $max   = 72;
-              if (mb_strlen($title) > $max) {
-                $title = mb_substr($title, 0, $max) . '…';
-              }
+              $max = 72;
+              if (mb_strlen($title) > $max) $title = mb_substr($title, 0, $max) . '…';
               ?>
 
               <a href="<?php the_permalink(); ?>" class="card card-link modern-card">
-
-                <!-- Top row -->
                 <div class="card-top">
                   <div class="card-uni modern-uni">
-                    <img class="uni-logo"
-                      src="<?php echo esc_url($uni_logo ? $uni_logo : $fallback_uni_icon); ?>"
-                      alt="<?php echo esc_attr($uni_name ? $uni_name : 'University'); ?>">
-                    <?php if ($uni_name): ?>
-                      <span class="uni-name"><?php echo esc_html($uni_name); ?></span>
-                    <?php endif; ?>
+                    <img class="uni-logo" src="<?php echo esc_url($uni_logo ? $uni_logo : $fallback_uni_icon); ?>" alt="<?php echo esc_attr($uni_name ? $uni_name : 'University'); ?>">
+                    <?php if ($uni_name): ?><span class="uni-name"><?php echo esc_html($uni_name); ?></span><?php endif; ?>
                   </div>
 
                   <div class="card-badges modern-badges">
                     <span class="badge <?php echo esc_attr($statusClass); ?>"><?php echo esc_html($status); ?></span>
-                    <!-- ✅ ECTS removed from here -->
                   </div>
                 </div>
 
-                <!-- Title -->
                 <h3 class="card-title modern-title"><?php echo esc_html($title); ?></h3>
 
-                <!-- Meta pills (only if any) -->
                 <?php if (!empty($pill_groups)): ?>
                   <div class="card-meta modern-meta">
                     <?php foreach ($pill_groups as $grp): ?>
@@ -296,55 +268,44 @@ $meta_icon = function ($label) use ($course_type) {
                   </div>
                 <?php endif; ?>
 
-                <!-- Footer info -->
                 <?php if (!empty($reg)): ?>
                   <div class="card-dates modern-dates">
-                    <div class="muted">
-                      <strong>Registration up to</strong>
-                      <?php echo esc_html(date_i18n('d.m.Y', strtotime($reg))); ?>
-                    </div>
+                    <div class="muted"><strong>Registration up to</strong> <?php echo esc_html(date_i18n('d.m.Y', strtotime($reg))); ?></div>
                   </div>
                 <?php endif; ?>
 
-                <!-- ✅ FOOTER (ECTS at very end) -->
                 <div class="card-foot modern-foot">
                   <span class="tag">VIEW DETAILS</span>
-
                   <div style="display:flex; align-items:center; gap:10px;">
                     <?php if ($ects_number > 0): ?>
-                      <span class="ects">
-                        ECTS <span class="ects-num"><?php echo esc_html($ects_number); ?></span>
-                      </span>
+                      <span class="ects">ECTS <span class="ects-num"><?php echo esc_html($ects_number); ?></span></span>
                     <?php endif; ?>
                   </div>
                 </div>
-
               </a>
 
             <?php endwhile; wp_reset_postdata(); ?>
           </div>
 
           <?php
+          // ✅ FIXED: Pretty pagination that works in subdirectory installs + keeps filters
           $big = 999999999;
-          $base = str_replace($big, '%#%', esc_url(get_pagenum_link($big)));
-          $format_link = (strpos($base, '?') !== false) ? '&paged=%#%' : '?paged=%#%';
-
           $links = paginate_links([
-            'base'     => $base,
-            'format'   => $format_link,
-            'current'  => max(1, (int) get_query_var('paged')),
-            'total'    => $q->max_num_pages,
-            'type'     => 'array',
-            'add_args' => array_filter($_GET),
+            'base'      => str_replace($big, '%#%', esc_url(get_pagenum_link($big))),
+            'format'    => '',
+            'current'   => max(1, (int) $paged),
+            'total'     => max(1, (int) $q->max_num_pages),
+            'type'      => 'array',
+            'add_args'  => array_filter($_GET),
+            'prev_text' => '‹',
+            'next_text' => '›',
           ]);
           ?>
 
           <?php if ($links): ?>
-            <div class="pager" aria-label="Pagination">
-              <?php foreach ($links as $l): ?>
-                <span class="pg"><?php echo $l; ?></span>
-              <?php endforeach; ?>
-            </div>
+            <nav class="pager" aria-label="Pagination">
+              <?php echo implode('', $links); ?>
+            </nav>
           <?php endif; ?>
 
         <?php endif; ?>
