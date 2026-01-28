@@ -418,10 +418,30 @@ a { color: inherit; text-decoration: none }
   opacity: .8;
   pointer-events: none;
 }
+.hero-keyvisual{
+  position:absolute;
+  top:-120px;
+  right:-140px;
+  width:560px;
+  height:560px;
+
+  background-image:url("../img/across.png");
+  background-repeat:no-repeat;
+  background-size:contain;
+  background-position:center;
+
+  pointer-events:none;
+  z-index:1;
+}
+
+/* ✅ ensure text above */
+.hero .container{ position:relative; z-index:2; }
+
 
 .hero-overlay {
   position: absolute;
   inset: 0;
+  z-index:1;
   background: linear-gradient(to bottom, rgba(2, 6, 23, .18), rgba(2, 6, 23, .70));
   pointer-events: none;
 }
@@ -967,9 +987,17 @@ a { color: inherit; text-decoration: none }
    Single Course page
    ========================================================= */
 
+   .course-page,
+  .course-layout,
+  .course-tabs,
+  .course-content {
+    min-width: 0;
+  }
+
 .course-page {
-  padding: 22px 0 46px;
+  padding: 18px 18px 0 18px;
 }
+ 
 
 .course-layout {
   display: grid;
@@ -991,7 +1019,6 @@ a { color: inherit; text-decoration: none }
   display: flex;
   gap: 26px;
   border-bottom: 1px solid rgba(2, 6, 23, .10);
-  margin-bottom: 10px;
 }
 
 .course-tabbtn {
@@ -1047,12 +1074,130 @@ a { color: inherit; text-decoration: none }
   .course-aside { position: relative; top: auto; }
 }
 
+@media (max-width: 640px){
+  .course-tabbar{
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+    gap: 8px!important;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(2, 6, 23, .10);
+  }
+
+  .course-tabbar::-webkit-scrollbar{ display:none; }
+  .course-tabbar{ scrollbar-width:none; }
+
+  .course-tabbtn{
+    flex: 0 0 auto; 
+    white-space: nowrap;
+    padding: 10px 12px;
+    font-size: 13px;
+    border-radius: 999px;
+    border: 1px solid rgba(2, 6, 23, .10);
+    background: #fff;
+  }
+
+  .course-tabbtn[aria-selected="true"]{
+    color: #fff;
+    background: linear-gradient(135deg, var(--brand), #2563eb);
+    border-color: transparent;
+  }
+
+  /* remove underline style on mobile (pill style looks cleaner) */
+  .course-tabbtn[aria-selected="true"]::after{
+    display:none;
+  }
+
+  /* content spacing */
+  .course-content{
+    padding-top: 12px;
+    font-size: 14px;
+  }
+}
+/* ✅ Mobile: avoid sticky sidebar causing weird jumps */
+@media (max-width: 980px){
+  .course-aside{
+    position: relative;
+    top: auto;
+  }
+
+  .ess-media img{
+    height: 200px; /* slightly larger on mobile */
+  }
+}
+.course-content img,
+.course-content table,
+.course-content iframe{
+  max-width: 100%;
+  height: auto;
+}
+
+/* ✅ Ribbon scale on small screens */
+@media (max-width: 480px){
+  .ppl-ribbon{
+    width: 170px;
+    left: -50px;
+    padding: 14px 0;
+    font-size: 13px;
+  }
+}
+
 .ess-card {
+   position: relative;
   background: #fff;
   border: 1px solid rgba(2, 6, 23, .10);
   border-radius: 6px;
   box-shadow: var(--shadow);
   overflow: hidden;
+}
+
+.ppl-ribbon{
+  position:absolute;
+  top:12px;
+  left:-52px;
+  z-index:10;
+
+  width:190px; 
+  padding:16px 0;    
+
+  text-align:center;
+  font-weight:900;
+  font-size:14px;
+  letter-spacing:1px;
+
+  text-transform:uppercase;
+  color:#fff;
+
+  transform:rotate(-45deg);
+  box-shadow:0 14px 34px rgba(2,6,23,.28);
+}
+
+/* OPEN */
+.ppl-ribbon.is-open{
+  background: #16a34a;
+}
+
+/* CLOSED */
+.ppl-ribbon.is-closed{
+  background: #ef4444; /* red */
+}
+
+/* optional: small white borders */
+.ppl-ribbon::before,
+.ppl-ribbon::after{
+  content:"";
+  position:absolute;
+  top:0;
+  width:100%;
+  height:2px;
+  left:0;
+  opacity:.6;
+  background: rgba(255,255,255,.65);
+}
+.ppl-ribbon::after{
+  top:auto;
+  bottom:0;
 }
 
 .ess-media {
@@ -1063,7 +1208,7 @@ a { color: inherit; text-decoration: none }
   width: 100%;
   height: 180px;
   object-fit: cover;
-  border-radius: 16px;
+  border-radius: 6px;
   display: block;
 }
 

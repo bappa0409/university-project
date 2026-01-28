@@ -6,8 +6,6 @@
  * + ✅ University Logo field (taxonomy term meta)
  * + ✅ Footer university logos output
  * + ✅ Seed Courses: varied long section titles + varied content
- * + ✅ Lecturers: repeater inputs (Name + Email)
- * + ✅ Curriculum tab removed: we will show Additional Info there
  * =========================================================
  */
 
@@ -327,7 +325,6 @@ if (!function_exists('ppl_course_archive_filters')) {
 
 /* =========================================================
    ✅ Course Meta Box + Save
-   ✅ Lecturers: repeater fields (Name + Email)
    ========================================================= */
 
 if (!function_exists('ppl_course_add_metabox')) {
@@ -356,29 +353,17 @@ if (!function_exists('ppl_course_meta_render')) {
     $reg_link   = get_post_meta($post->ID, 'course_reg_link', true);
     $contact    = get_post_meta($post->ID, 'course_contact_email', true);
     $add_info   = get_post_meta($post->ID, 'course_additional_info', true);
-
     $lecturers  = get_post_meta($post->ID, 'course_lecturers', true);
+
     if (!is_array($lecturers)) $lecturers = [];
     if ($status === '') $status = 'CLOSED';
-
-    // At least one row
-    if (empty($lecturers)) {
-      $lecturers = [['name' => '', 'email' => '']];
-    }
 ?>
     <style>
       .ppl-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px }
       .ppl-field label { display:block; font-weight:600; margin-bottom:6px }
-      .ppl-field input, .ppl-field select, .ppl-field textarea { width:100%; padding:8px 10px; border:1px solid #c3c4c7; border-radius:6px }
+      .ppl-field input, .ppl-field select { width:100%; padding:8px 10px; border:1px solid #c3c4c7; border-radius:6px }
       .ppl-help { font-size:12px; color:#646970; margin-top:6px }
-      .ppl-repeater { grid-column:1/-1; border:1px solid #e5e7eb; padding:12px; border-radius:10px; background:#fff }
-      .ppl-row { display:grid; grid-template-columns: 1fr 1fr auto; gap:10px; align-items:end; padding:10px 0; border-bottom:1px solid rgba(2,6,23,.06) }
-      .ppl-row:last-child { border-bottom:0 }
-      .ppl-row .button { height:36px }
-      @media(max-width:782px){
-        .ppl-grid{ grid-template-columns:1fr }
-        .ppl-row{ grid-template-columns:1fr; }
-      }
+      @media(max-width:782px){ .ppl-grid{ grid-template-columns:1fr } }
     </style>
 
     <div class="ppl-grid">
@@ -419,91 +404,27 @@ if (!function_exists('ppl_course_meta_render')) {
 
       <div class="ppl-field" style="grid-column:1/-1;">
         <label for="course_additional_info"><?php _e('Additional Information', 'proplus-learning'); ?></label>
-        <textarea name="course_additional_info" id="course_additional_info" rows="4"><?php
+        <textarea name="course_additional_info" id="course_additional_info" rows="4"
+          style="width:100%; padding:8px 10px; border:1px solid #c3c4c7; border-radius:6px;"><?php
           echo esc_textarea($add_info);
         ?></textarea>
       </div>
 
-      <!-- ✅ Lecturers repeater -->
-      <div class="ppl-field ppl-repeater">
-        <label><?php _e('Lecturers', 'proplus-learning'); ?></label>
-        <div class="ppl-help">Add one or more lecturers. Each lecturer has Name + Email.</div>
-
-        <div id="ppl-lecturers-wrap">
-          <?php foreach ($lecturers as $idx => $l): ?>
-            <div class="ppl-row">
-              <div>
-                <label style="font-weight:600; margin-bottom:6px;"><?php _e('Name', 'proplus-learning'); ?></label>
-                <input type="text"
-                  name="course_lecturers[<?php echo (int)$idx; ?>][name]"
-                  value="<?php echo esc_attr($l['name'] ?? ''); ?>"
-                  placeholder="John Doe">
-              </div>
-
-              <div>
-                <label style="font-weight:600; margin-bottom:6px;"><?php _e('Email', 'proplus-learning'); ?></label>
-                <input type="email"
-                  name="course_lecturers[<?php echo (int)$idx; ?>][email]"
-                  value="<?php echo esc_attr($l['email'] ?? ''); ?>"
-                  placeholder="john@uni.edu">
-              </div>
-
-              <div>
-                <button type="button" class="button ppl-lecturer-remove"><?php _e('Remove', 'proplus-learning'); ?></button>
-              </div>
-            </div>
-          <?php endforeach; ?>
-        </div>
-
-        <p style="margin-top:10px;">
-          <button type="button" class="button button-secondary" id="ppl-lecturer-add">
-            + <?php _e('Add Lecturer', 'proplus-learning'); ?>
-          </button>
-        </p>
-
-        <script>
-          (function(){
-            const wrap = document.getElementById('ppl-lecturers-wrap');
-            const addBtn = document.getElementById('ppl-lecturer-add');
-            if(!wrap || !addBtn) return;
-
-            function nextIndex(){
-              return wrap.querySelectorAll('.ppl-row').length;
+      <div class="ppl-field" style="grid-column:1/-1;">
+        <label><?php _e('Lecturers (one per line)', 'proplus-learning'); ?></label>
+        <div class="ppl-help">Format: Name | optional-email (example: John Doe | john@uni.edu)</div>
+        <textarea name="course_lecturers_raw" rows="4"
+          style="width:100%; padding:8px 10px; border:1px solid #c3c4c7; border-radius:6px;"
+          placeholder="Charlotte Denizeau | charlotte@uni.edu"><?php
+            $lines = [];
+            foreach ($lecturers as $l) {
+              $nm = isset($l['name']) ? $l['name'] : '';
+              $em = isset($l['email']) ? $l['email'] : '';
+              $lines[] = trim($nm . ($em ? " | $em" : ''));
             }
-
-            function rowHtml(i){
-              return `
-                <div class="ppl-row">
-                  <div>
-                    <label style="font-weight:600; margin-bottom:6px;">Name</label>
-                    <input type="text" name="course_lecturers[${i}][name]" value="" placeholder="John Doe">
-                  </div>
-                  <div>
-                    <label style="font-weight:600; margin-bottom:6px;">Email</label>
-                    <input type="email" name="course_lecturers[${i}][email]" value="" placeholder="john@uni.edu">
-                  </div>
-                  <div>
-                    <button type="button" class="button ppl-lecturer-remove">Remove</button>
-                  </div>
-                </div>
-              `;
-            }
-
-            addBtn.addEventListener('click', function(){
-              const i = nextIndex();
-              wrap.insertAdjacentHTML('beforeend', rowHtml(i));
-            });
-
-            wrap.addEventListener('click', function(e){
-              const btn = e.target.closest('.ppl-lecturer-remove');
-              if(!btn) return;
-              const row = btn.closest('.ppl-row');
-              if(row) row.remove();
-            });
-          })();
-        </script>
+            echo esc_textarea(implode("\n", array_filter($lines)));
+        ?></textarea>
       </div>
-
     </div>
 <?php
   }
@@ -526,36 +447,42 @@ if (!function_exists('ppl_course_meta_save')) {
     $ects_number = isset($_POST['ects_number']) ? (int) $_POST['ects_number'] : 0;
     if ($ects_number < 0) $ects_number = 0;
 
-    $reg      = isset($_POST['course_reg']) ? sanitize_text_field(wp_unslash($_POST['course_reg'])) : '';
+    $reg   = isset($_POST['course_reg']) ? sanitize_text_field(wp_unslash($_POST['course_reg'])) : '';
     $reg_link = isset($_POST['course_reg_link']) ? esc_url_raw(wp_unslash($_POST['course_reg_link'])) : '';
     $contact  = isset($_POST['course_contact_email']) ? sanitize_email(wp_unslash($_POST['course_contact_email'])) : '';
     $add_info = isset($_POST['course_additional_info']) ? sanitize_textarea_field(wp_unslash($_POST['course_additional_info'])) : '';
 
-    $is_date = function ($d) {
-      return ($d !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $d)) ? $d : '';
-    };
-    $reg = $is_date($reg);
+    $raw = isset($_POST['course_lecturers_raw']) ? wp_unslash($_POST['course_lecturers_raw']) : '';
+    $raw = trim((string)$raw);
 
-    // ✅ Lecturers array from repeater fields
     $lecturers = [];
-    $raw = $_POST['course_lecturers'] ?? [];
-    if (is_array($raw)) {
-      foreach ($raw as $row) {
-        $name  = sanitize_text_field(wp_unslash($row['name'] ?? ''));
-        $email = sanitize_email(wp_unslash($row['email'] ?? ''));
+    if ($raw !== '') {
+      $rows = preg_split("/\r\n|\n|\r/", $raw);
+      foreach ($rows as $row) {
+        $row = trim($row);
+        if ($row === '') continue;
+        $parts = array_map('trim', explode('|', $row));
+        $name = sanitize_text_field($parts[0] ?? '');
+        $email = sanitize_email($parts[1] ?? '');
         if ($name !== '') {
           $lecturers[] = ['name' => $name, 'email' => $email];
         }
       }
     }
 
+    $is_date = function ($d) {
+      return ($d !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $d)) ? $d : '';
+    };
+
+    $reg = $is_date($reg);
+
     update_post_meta($post_id, 'course_status', $status);
     update_post_meta($post_id, 'ects_number', $ects_number);
     update_post_meta($post_id, 'course_reg', $reg);
+    update_post_meta($post_id, 'course_lecturers', $lecturers);
     update_post_meta($post_id, 'course_reg_link', $reg_link);
     update_post_meta($post_id, 'course_contact_email', $contact);
     update_post_meta($post_id, 'course_additional_info', $add_info);
-    update_post_meta($post_id, 'course_lecturers', $lecturers);
   }
   add_action('save_post', 'ppl_course_meta_save');
 }
@@ -574,12 +501,15 @@ add_action('wp_enqueue_scripts', function () {
 
 /* =========================================================
    ✅ University Logo Field (Taxonomy Term Meta)
+   Taxonomy: course_university
+   Meta key: ppl_university_logo_id (attachment ID)
    ========================================================= */
 
 add_action('course_university_add_form_fields', function () {
 ?>
   <div class="form-field term-group">
     <label for="ppl_university_logo_id"><?php esc_html_e('University Logo', 'proplus-learning'); ?></label>
+
     <input type="hidden" id="ppl_university_logo_id" name="ppl_university_logo_id" value="" />
 
     <div id="ppl_university_logo_preview" style="margin-top:10px;">
@@ -698,7 +628,6 @@ add_action('admin_enqueue_scripts', function ($hook) {
 })(jQuery);
 JS;
 
-  wp_enqueue_script('jquery');
   wp_add_inline_script('jquery', $js);
 });
 
@@ -759,6 +688,7 @@ if (!function_exists('ppl_render_university_logos_inline')) {
   }
 }
 
+
 /* =========================================================
    ✅ ADMIN SEED COURSES (NO WP-CLI)
    Tools → Seed Courses
@@ -808,6 +738,7 @@ function ppl_seed_courses_admin_page()
 <?php
 }
 
+
 /**
  * Build a varied course title with MAX 100 characters (<=100)
  */
@@ -839,6 +770,7 @@ function ppl_seed_course_title($i = 1)
     'including Team Assignments and Capstone Evaluation'
   ];
 
+  // ✅ Build a base title (will be trimmed to <=100 chars)
   $t = sprintf(
     '%s course on %s %s (Course #%d)',
     $prefix[array_rand($prefix)],
@@ -847,150 +779,32 @@ function ppl_seed_course_title($i = 1)
     $i
   );
 
+  // ✅ Ensure MAX 100 chars (smart trim, keep whole words)
   $max = 100;
 
   if (mb_strlen($t) > $max) {
-    $cut = mb_substr($t, 0, $max - 1);
+    // keep space for ellipsis
+    $cut = mb_substr($t, 0, $max - 1); // reserve 1 char for …
+    // trim to last space so word doesn't break
     $cut = preg_replace('/\s+\S*$/u', '', $cut);
     $t = rtrim($cut) . '…';
   }
 
+  // Just in case (hard guarantee)
   if (mb_strlen($t) > $max) {
     $t = mb_substr($t, 0, $max);
   }
 
   return $t;
 }
-/**
- * ✅ Long + varied Additional Info generator
- */
-function ppl_seed_course_additional_info($i = 1)
-{
-  $audience = [
-    'BA students with basic programming foundations',
-    'MA students aiming to deepen applied skills',
-    'PhD candidates focusing on research methods and critique',
-    'staff members interested in professional upskilling',
-    'mixed-level cohorts (BA/MA) with guided onboarding materials',
-  ];
 
-  $workload = [
-    '4–6 hours per week (videos, readings, and short quizzes)',
-    '6–8 hours per week including practical labs',
-    '8–10 hours per week with a project-based assignment',
-    '3–5 hours per week with optional deep-dive materials',
-  ];
 
-  $assessment = [
-    'weekly quizzes (30%), mini-project (30%), final reflection (40%)',
-    'labs (40%), group task (20%), final project (40%)',
-    'participation (20%), case study report (30%), final exam (50%)',
-    'portfolio tasks (60%) + final presentation (40%)',
-  ];
-
-  $recognition = [
-    'Recognition depends on your home programme rules. Please confirm whether it can be transferred as core/optional/elective credit.',
-    'Before enrolling, confirm recognition with your programme coordinator (core/optional/elective).',
-    'Credit recognition is handled by your home university; verify the mapping in advance to avoid scheduling conflicts.',
-  ];
-
-  $requirements = [
-    'Basic Python or equivalent programming experience is recommended.',
-    'Familiarity with statistics fundamentals (mean, variance, distributions) will be helpful.',
-    'A stable internet connection and a laptop capable of running standard development tools are required.',
-    'No advanced prerequisites, but motivation for self-paced learning is expected.',
-    'Prior coursework in algorithms/data structures is beneficial but not mandatory.',
-  ];
-
-  $learning_outcomes = [
-    'Understand key concepts and terminology used in contemporary digital systems.',
-    'Apply practical tools to solve real-world problems using structured workflows.',
-    'Evaluate trade-offs, constraints, and ethical considerations in applied scenarios.',
-    'Communicate technical results clearly using reports, dashboards, or presentations.',
-  ];
-
-  $tools = [
-    'Jupyter / VS Code, Git, and cloud-based notebooks',
-    'a learning platform (LMS) with discussion forum and submission portal',
-    'Zoom/Teams for live Q&A sessions (optional)',
-    'a shared repository for templates and starter kits',
-  ];
-
-  $support = [
-    'You will have access to weekly office hours and a moderated Q&A forum.',
-    'Support is provided via email and the course discussion board within 48 hours (business days).',
-    'A short onboarding session and setup checklist will be available in week 0.',
-  ];
-
-  $pick = function ($arr) {
-    return $arr[array_rand($arr)];
-  };
-
-  // Make it longer by composing multiple paragraphs + bullets
-  $p1 = sprintf(
-    '<p><strong>Additional information:</strong> This course is designed for <em>%s</em>. Expected workload is <strong>%s</strong>. Assessment typically follows: <strong>%s</strong>.</p>',
-    esc_html($pick($audience)),
-    esc_html($pick($workload)),
-    esc_html($pick($assessment))
-  );
-
-  $p2 = sprintf(
-    '<p><strong>Recognition & scheduling:</strong> %s %s</p>',
-    esc_html($pick($recognition)),
-    esc_html($pick([
-      'Please also compare the course timeline with your local teaching period.',
-      'If your semester dates differ, you can still participate as extracurricular learning.',
-      'Seats may be limited; earlier enrolment is recommended.',
-    ]))
-  );
-
-  $p3 = '<p><strong>Technical & academic requirements:</strong></p><ul>';
-  $reqs = $requirements;
-  shuffle($reqs);
-  foreach (array_slice($reqs, 0, 3) as $r) {
-    $p3 .= '<li>' . esc_html($r) . '</li>';
-  }
-  $p3 .= '</ul>';
-
-  $p4 = '<p><strong>Learning outcomes:</strong></p><ul>';
-  $outs = $learning_outcomes;
-  shuffle($outs);
-  foreach (array_slice($outs, 0, 3) as $o) {
-    $p4 .= '<li>' . esc_html($o) . '</li>';
-  }
-  $p4 .= '</ul>';
-
-  $p5 = sprintf(
-    '<p><strong>Tools & support:</strong> You will use %s. %s</p>',
-    esc_html($pick($tools)),
-    esc_html($pick($support))
-  );
-
-  // Variation hook: add a short “note” block sometimes
-  $note = '';
-  if (rand(0, 1) === 1) {
-    $note = sprintf(
-      '<blockquote><strong>Note:</strong> %s</blockquote>',
-      esc_html($pick([
-        'Group work may involve cross-university teams and peer feedback.',
-        'Some materials are released weekly; plan ahead for deadlines.',
-        'If you miss the first week, you can still catch up using the recorded sessions.',
-        'Participation in forums may be part of the final evaluation.',
-      ]))
-    );
-  }
-
-  // Ensure it’s long and varied
-  return $p1 . $p2 . $p3 . $p4 . $p5 . $note;
-}
 
 /**
  * ✅ Varied long-titles + varied content generator for seeded courses
  */
 function ppl_seed_course_content($i = 1)
 {
-  // your existing generator 그대로
-  // (same as before – cut for brevity? NO, keeping full)
   $section_titles = [
     'registration' => [
       'Registration procedure and application timeline for this course',
@@ -1069,8 +883,9 @@ function ppl_seed_course_content($i = 1)
     'learning@4euplus.eu',
   ];
 
+  // Timeline generator
   $year = (int) date('Y');
-  $month = rand(2, 11);
+  $month = rand(2, 11); // Feb–Nov
   $start_day = rand(1, 18);
 
   $p1_from = sprintf('%02d %s', $start_day, date('F', mktime(0, 0, 0, $month, 1, $year)));
@@ -1097,6 +912,7 @@ function ppl_seed_course_content($i = 1)
   };
 
   $g = $enrol_guides[array_rand($enrol_guides)];
+
   $principle = $principles[array_rand($principles)];
   $agreement = $agreement_lines[array_rand($agreement_lines)];
   $note1 = $important_notes[array_rand($important_notes)];
@@ -1191,6 +1007,7 @@ function ppl_seed_courses_run($count = 50)
     return [(int)$terms[array_rand($terms)]->term_id];
   };
 
+  
   for ($i = 1; $i <= $count; $i++) {
 
     $post_id = wp_insert_post([
@@ -1200,14 +1017,13 @@ function ppl_seed_courses_run($count = 50)
       'post_status'  => 'publish',
     ]);
 
-    if (!$post_id || is_wp_error($post_id)) continue;
-
-    // ✅ Seed lecturers (array format same as metabox save)
+    // ✅ Seed instructor / lecturers
     $lecturer_names = [
       'Charlotte Denizeau', 'John Doe', 'Maria Nowak', 'Alex Johnson',
       'Sofia Rossi', 'Liam Müller', 'Elena Garcia', 'Noah Smith',
       'Amina Khan', 'Jakub Zielinski'
     ];
+
     $lecturer_emails = [
       'charlotte@uni.edu', 'john@uni.edu', 'maria@uni.edu', 'alex@uni.edu',
       'sofia@uni.edu', 'liam@uni.edu', 'elena@uni.edu', 'noah@uni.edu',
@@ -1215,7 +1031,8 @@ function ppl_seed_courses_run($count = 50)
     ];
 
     $lecturers = [];
-    $how_many = rand(1, 3);
+    $how_many = rand(1, 3); // 1-3 lecturers
+
     for ($k = 0; $k < $how_many; $k++) {
       $idx = array_rand($lecturer_names);
       $lecturers[] = [
@@ -1224,7 +1041,9 @@ function ppl_seed_courses_run($count = 50)
       ];
     }
 
-    // Terms
+
+    if (!$post_id || is_wp_error($post_id)) continue;
+
     wp_set_post_terms($post_id, $pick('course_university'), 'course_university');
     wp_set_post_terms($post_id, $pick('course_format'), 'course_format');
     wp_set_post_terms($post_id, $pick('course_target'), 'course_target');
@@ -1232,13 +1051,10 @@ function ppl_seed_courses_run($count = 50)
     wp_set_post_terms($post_id, $pick('course_semester_availability'), 'course_semester_availability');
     wp_set_post_terms($post_id, $pick('course_type'), 'course_type');
 
-    // ✅ Seed ONLY needed meta (no curriculum/period/start/end)
     update_post_meta($post_id, 'course_status', rand(0, 1) ? 'OPEN' : 'CLOSED');
     update_post_meta($post_id, 'ects_number', rand(1, 30));
     update_post_meta($post_id, 'course_reg', date('Y-m-d', strtotime('+' . rand(5, 120) . ' days')));
-    update_post_meta($post_id, 'course_reg_link', 'https://example.com/apply?course=' . $post_id);
     update_post_meta($post_id, 'course_contact_email', 'info@example.com');
-    update_post_meta($post_id, 'course_additional_info', ppl_seed_course_additional_info($i));
     update_post_meta($post_id, 'course_lecturers', $lecturers);
   }
 }

@@ -5,9 +5,6 @@
  * CPT + Tax + MetaBox + Filters helpers + Flatpickr
  * + ✅ University Logo field (taxonomy term meta)
  * + ✅ Footer university logos output
- * + ✅ Seed Courses: varied long section titles + varied content
- * + ✅ Lecturers: repeater inputs (Name + Email)
- * + ✅ Curriculum tab removed: we will show Additional Info there
  * =========================================================
  */
 
@@ -57,7 +54,7 @@ if (!function_exists('ppl_enqueue_assets')) {
     wp_enqueue_style('ppl-theme', get_template_directory_uri() . '/assets/css/theme.css', [], $ver);
     wp_enqueue_style('dashicons');
     wp_enqueue_script('ppl-theme', get_template_directory_uri() . '/assets/js/theme.js', [], $ver, true);
-    wp_enqueue_style(
+     wp_enqueue_style(
       'ppl-raleway',
       'https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;600;700;800;900&display=swap',
       [],
@@ -206,13 +203,16 @@ if (!function_exists('ppl_register_course_cpt')) {
 if (!function_exists('ppl_register_course_taxonomies')) {
   function ppl_register_course_taxonomies()
   {
+    // ✅ UPDATED TAXONOMIES LIST
     $taxes = [
-      'course_university'            => ['University', 'Universities'],
-      'course_format'                => ['Modality', 'Modalities'],
-      'course_target'                => ['Study Program', 'Study Programs'],
-      'course_language'              => ['Language', 'Languages'],
-      'course_semester_availability' => ['Semester availability', 'Semester availability'],
-      'course_type'                  => ['Course type', 'Course types'],
+      'course_university'           => ['University', 'Universities'],
+      'course_format'               => ['Modality', 'Modalities'],                 // renamed label
+      'course_target'               => ['Study Program', 'Study Programs'],        // renamed label
+      'course_language'             => ['Language', 'Languages'],
+
+      // ✅ NEW
+      'course_semester_availability'=> ['Semester availability', 'Semester availability'],
+      'course_type'                 => ['Course type', 'Course types'],
     ];
 
     foreach ($taxes as $tax => $labels) {
@@ -245,19 +245,23 @@ if (!function_exists('ppl_course_archive_filters')) {
   function ppl_course_archive_filters($query)
   {
     if (is_admin() || !$query->is_main_query()) return;
+
+    // Apply only on course archive page
     if (!is_post_type_archive('course')) return;
 
+    // Search
     if (isset($_GET['search']) && $_GET['search'] !== '') {
       $query->set('s', sanitize_text_field(wp_unslash($_GET['search'])));
     }
 
+    // Tax filters mapping: GET key => taxonomy
     $tax_map = [
-      'university'            => 'course_university',
-      'format'                => 'course_format',
-      'target'                => 'course_target',
-      'language'              => 'course_language',
-      'semester_availability' => 'course_semester_availability',
-      'course_type'           => 'course_type',
+      'university'             => 'course_university',
+      'format'                 => 'course_format', // Modality
+      'target'                 => 'course_target', // Study Program
+      'language'               => 'course_language',
+      'semester_availability'  => 'course_semester_availability', // ✅ NEW
+      'course_type'            => 'course_type', // ✅ NEW
     ];
 
     $tax_query = ['relation' => 'AND'];
@@ -278,6 +282,7 @@ if (!function_exists('ppl_course_archive_filters')) {
       $query->set('tax_query', $tax_query);
     }
 
+    // Meta filters: ECTS <= slider
     $ects = isset($_GET['ects']) ? (int) $_GET['ects'] : 0;
     if ($ects > 0) {
       $meta_query = (array) $query->get('meta_query');
@@ -290,6 +295,7 @@ if (!function_exists('ppl_course_archive_filters')) {
       $query->set('meta_query', $meta_query);
     }
 
+    // Application date: course_reg between app_from/app_to
     $app_from = ppl_get_date('app_from');
     $app_to   = ppl_get_date('app_to');
 
@@ -327,7 +333,6 @@ if (!function_exists('ppl_course_archive_filters')) {
 
 /* =========================================================
    ✅ Course Meta Box + Save
-   ✅ Lecturers: repeater fields (Name + Email)
    ========================================================= */
 
 if (!function_exists('ppl_course_add_metabox')) {
@@ -356,29 +361,17 @@ if (!function_exists('ppl_course_meta_render')) {
     $reg_link   = get_post_meta($post->ID, 'course_reg_link', true);
     $contact    = get_post_meta($post->ID, 'course_contact_email', true);
     $add_info   = get_post_meta($post->ID, 'course_additional_info', true);
-
     $lecturers  = get_post_meta($post->ID, 'course_lecturers', true);
+
     if (!is_array($lecturers)) $lecturers = [];
     if ($status === '') $status = 'CLOSED';
-
-    // At least one row
-    if (empty($lecturers)) {
-      $lecturers = [['name' => '', 'email' => '']];
-    }
 ?>
     <style>
       .ppl-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px }
       .ppl-field label { display:block; font-weight:600; margin-bottom:6px }
-      .ppl-field input, .ppl-field select, .ppl-field textarea { width:100%; padding:8px 10px; border:1px solid #c3c4c7; border-radius:6px }
+      .ppl-field input, .ppl-field select { width:100%; padding:8px 10px; border:1px solid #c3c4c7; border-radius:6px }
       .ppl-help { font-size:12px; color:#646970; margin-top:6px }
-      .ppl-repeater { grid-column:1/-1; border:1px solid #e5e7eb; padding:12px; border-radius:10px; background:#fff }
-      .ppl-row { display:grid; grid-template-columns: 1fr 1fr auto; gap:10px; align-items:end; padding:10px 0; border-bottom:1px solid rgba(2,6,23,.06) }
-      .ppl-row:last-child { border-bottom:0 }
-      .ppl-row .button { height:36px }
-      @media(max-width:782px){
-        .ppl-grid{ grid-template-columns:1fr }
-        .ppl-row{ grid-template-columns:1fr; }
-      }
+      @media(max-width:782px){ .ppl-grid{ grid-template-columns:1fr } }
     </style>
 
     <div class="ppl-grid">
@@ -419,91 +412,27 @@ if (!function_exists('ppl_course_meta_render')) {
 
       <div class="ppl-field" style="grid-column:1/-1;">
         <label for="course_additional_info"><?php _e('Additional Information', 'proplus-learning'); ?></label>
-        <textarea name="course_additional_info" id="course_additional_info" rows="4"><?php
+        <textarea name="course_additional_info" id="course_additional_info" rows="4"
+          style="width:100%; padding:8px 10px; border:1px solid #c3c4c7; border-radius:6px;"><?php
           echo esc_textarea($add_info);
         ?></textarea>
       </div>
 
-      <!-- ✅ Lecturers repeater -->
-      <div class="ppl-field ppl-repeater">
-        <label><?php _e('Lecturers', 'proplus-learning'); ?></label>
-        <div class="ppl-help">Add one or more lecturers. Each lecturer has Name + Email.</div>
-
-        <div id="ppl-lecturers-wrap">
-          <?php foreach ($lecturers as $idx => $l): ?>
-            <div class="ppl-row">
-              <div>
-                <label style="font-weight:600; margin-bottom:6px;"><?php _e('Name', 'proplus-learning'); ?></label>
-                <input type="text"
-                  name="course_lecturers[<?php echo (int)$idx; ?>][name]"
-                  value="<?php echo esc_attr($l['name'] ?? ''); ?>"
-                  placeholder="John Doe">
-              </div>
-
-              <div>
-                <label style="font-weight:600; margin-bottom:6px;"><?php _e('Email', 'proplus-learning'); ?></label>
-                <input type="email"
-                  name="course_lecturers[<?php echo (int)$idx; ?>][email]"
-                  value="<?php echo esc_attr($l['email'] ?? ''); ?>"
-                  placeholder="john@uni.edu">
-              </div>
-
-              <div>
-                <button type="button" class="button ppl-lecturer-remove"><?php _e('Remove', 'proplus-learning'); ?></button>
-              </div>
-            </div>
-          <?php endforeach; ?>
-        </div>
-
-        <p style="margin-top:10px;">
-          <button type="button" class="button button-secondary" id="ppl-lecturer-add">
-            + <?php _e('Add Lecturer', 'proplus-learning'); ?>
-          </button>
-        </p>
-
-        <script>
-          (function(){
-            const wrap = document.getElementById('ppl-lecturers-wrap');
-            const addBtn = document.getElementById('ppl-lecturer-add');
-            if(!wrap || !addBtn) return;
-
-            function nextIndex(){
-              return wrap.querySelectorAll('.ppl-row').length;
+      <div class="ppl-field" style="grid-column:1/-1;">
+        <label><?php _e('Lecturers (one per line)', 'proplus-learning'); ?></label>
+        <div class="ppl-help">Format: Name | optional-email (example: John Doe | john@uni.edu)</div>
+        <textarea name="course_lecturers_raw" rows="4"
+          style="width:100%; padding:8px 10px; border:1px solid #c3c4c7; border-radius:6px;"
+          placeholder="Charlotte Denizeau | charlotte@uni.edu"><?php
+            $lines = [];
+            foreach ($lecturers as $l) {
+              $nm = isset($l['name']) ? $l['name'] : '';
+              $em = isset($l['email']) ? $l['email'] : '';
+              $lines[] = trim($nm . ($em ? " | $em" : ''));
             }
-
-            function rowHtml(i){
-              return `
-                <div class="ppl-row">
-                  <div>
-                    <label style="font-weight:600; margin-bottom:6px;">Name</label>
-                    <input type="text" name="course_lecturers[${i}][name]" value="" placeholder="John Doe">
-                  </div>
-                  <div>
-                    <label style="font-weight:600; margin-bottom:6px;">Email</label>
-                    <input type="email" name="course_lecturers[${i}][email]" value="" placeholder="john@uni.edu">
-                  </div>
-                  <div>
-                    <button type="button" class="button ppl-lecturer-remove">Remove</button>
-                  </div>
-                </div>
-              `;
-            }
-
-            addBtn.addEventListener('click', function(){
-              const i = nextIndex();
-              wrap.insertAdjacentHTML('beforeend', rowHtml(i));
-            });
-
-            wrap.addEventListener('click', function(e){
-              const btn = e.target.closest('.ppl-lecturer-remove');
-              if(!btn) return;
-              const row = btn.closest('.ppl-row');
-              if(row) row.remove();
-            });
-          })();
-        </script>
+            echo esc_textarea(implode("\n", array_filter($lines)));
+        ?></textarea>
       </div>
-
     </div>
 <?php
   }
@@ -526,36 +455,43 @@ if (!function_exists('ppl_course_meta_save')) {
     $ects_number = isset($_POST['ects_number']) ? (int) $_POST['ects_number'] : 0;
     if ($ects_number < 0) $ects_number = 0;
 
-    $reg      = isset($_POST['course_reg']) ? sanitize_text_field(wp_unslash($_POST['course_reg'])) : '';
+    $reg   = isset($_POST['course_reg']) ? sanitize_text_field(wp_unslash($_POST['course_reg'])) : '';
     $reg_link = isset($_POST['course_reg_link']) ? esc_url_raw(wp_unslash($_POST['course_reg_link'])) : '';
     $contact  = isset($_POST['course_contact_email']) ? sanitize_email(wp_unslash($_POST['course_contact_email'])) : '';
     $add_info = isset($_POST['course_additional_info']) ? sanitize_textarea_field(wp_unslash($_POST['course_additional_info'])) : '';
 
-    $is_date = function ($d) {
-      return ($d !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $d)) ? $d : '';
-    };
-    $reg = $is_date($reg);
+    // Lecturers parse
+    $raw = isset($_POST['course_lecturers_raw']) ? wp_unslash($_POST['course_lecturers_raw']) : '';
+    $raw = trim((string)$raw);
 
-    // ✅ Lecturers array from repeater fields
     $lecturers = [];
-    $raw = $_POST['course_lecturers'] ?? [];
-    if (is_array($raw)) {
-      foreach ($raw as $row) {
-        $name  = sanitize_text_field(wp_unslash($row['name'] ?? ''));
-        $email = sanitize_email(wp_unslash($row['email'] ?? ''));
+    if ($raw !== '') {
+      $rows = preg_split("/\r\n|\n|\r/", $raw);
+      foreach ($rows as $row) {
+        $row = trim($row);
+        if ($row === '') continue;
+        $parts = array_map('trim', explode('|', $row));
+        $name = sanitize_text_field($parts[0] ?? '');
+        $email = sanitize_email($parts[1] ?? '');
         if ($name !== '') {
           $lecturers[] = ['name' => $name, 'email' => $email];
         }
       }
     }
 
+    $is_date = function ($d) {
+      return ($d !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $d)) ? $d : '';
+    };
+
+    $reg   = $is_date($reg);
+
     update_post_meta($post_id, 'course_status', $status);
     update_post_meta($post_id, 'ects_number', $ects_number);
     update_post_meta($post_id, 'course_reg', $reg);
+    update_post_meta($post_id, 'course_lecturers', $lecturers);
     update_post_meta($post_id, 'course_reg_link', $reg_link);
     update_post_meta($post_id, 'course_contact_email', $contact);
     update_post_meta($post_id, 'course_additional_info', $add_info);
-    update_post_meta($post_id, 'course_lecturers', $lecturers);
   }
   add_action('save_post', 'ppl_course_meta_save');
 }
@@ -574,12 +510,16 @@ add_action('wp_enqueue_scripts', function () {
 
 /* =========================================================
    ✅ University Logo Field (Taxonomy Term Meta)
+   Taxonomy: course_university
+   Meta key: ppl_university_logo_id (attachment ID)
    ========================================================= */
 
+// Add field (Add New University)
 add_action('course_university_add_form_fields', function () {
 ?>
   <div class="form-field term-group">
     <label for="ppl_university_logo_id"><?php esc_html_e('University Logo', 'proplus-learning'); ?></label>
+
     <input type="hidden" id="ppl_university_logo_id" name="ppl_university_logo_id" value="" />
 
     <div id="ppl_university_logo_preview" style="margin-top:10px;">
@@ -600,6 +540,7 @@ add_action('course_university_add_form_fields', function () {
 <?php
 });
 
+// Edit field (Edit University)
 add_action('course_university_edit_form_fields', function ($term) {
   $logo_id  = (int) get_term_meta($term->term_id, 'ppl_university_logo_id', true);
   $logo_url = $logo_id ? wp_get_attachment_image_url($logo_id, 'thumbnail') : '';
@@ -631,6 +572,7 @@ add_action('course_university_edit_form_fields', function ($term) {
 <?php
 }, 10, 1);
 
+// Save logo ID
 add_action('created_course_university', function ($term_id) {
   if (!isset($_POST['ppl_university_logo_id'])) return;
   update_term_meta($term_id, 'ppl_university_logo_id', (int) $_POST['ppl_university_logo_id']);
@@ -641,6 +583,7 @@ add_action('edited_course_university', function ($term_id) {
   update_term_meta($term_id, 'ppl_university_logo_id', (int) $_POST['ppl_university_logo_id']);
 });
 
+// Media uploader JS only on university taxonomy admin screens
 add_action('admin_enqueue_scripts', function ($hook) {
   if ($hook !== 'edit-tags.php' && $hook !== 'term.php') return;
 
@@ -698,9 +641,12 @@ add_action('admin_enqueue_scripts', function ($hook) {
 })(jQuery);
 JS;
 
-  wp_enqueue_script('jquery');
   wp_add_inline_script('jquery', $js);
 });
+
+/* =========================================================
+   ✅ Admin list column for logo (optional)
+   ========================================================= */
 
 add_filter('manage_edit-course_university_columns', function ($columns) {
   $new = [];
@@ -760,9 +706,58 @@ if (!function_exists('ppl_render_university_logos_inline')) {
 }
 
 /* =========================================================
-   ✅ ADMIN SEED COURSES (NO WP-CLI)
-   Tools → Seed Courses
+   FRONTEND COURSE SUBMISSION (TEACHER)
    ========================================================= */
+
+add_action('init', function () {
+
+  if (!isset($_POST['ppl_submit_course'])) return;
+
+  if (
+    !isset($_POST['ppl_front_course_nonce']) ||
+    !wp_verify_nonce($_POST['ppl_front_course_nonce'], 'ppl_front_course')
+  ) {
+    wp_die('Security check failed');
+  }
+
+  if (!is_user_logged_in()) {
+    wp_die('Please login to submit a course.');
+  }
+
+  $post_id = wp_insert_post([
+    'post_type'    => 'course',
+    'post_title'   => sanitize_text_field($_POST['course_title']),
+    'post_content' => sanitize_textarea_field($_POST['course_content']),
+    'post_status'  => 'pending',
+    'post_author'  => get_current_user_id(),
+  ]);
+
+  if (is_wp_error($post_id)) return;
+
+  // University set (existing)
+  if (!empty($_POST['course_university']) && is_array($_POST['course_university'])) {
+    wp_set_post_terms(
+      $post_id,
+      array_map('intval', $_POST['course_university']),
+      'course_university'
+    );
+  }
+
+  update_post_meta($post_id, 'course_status', sanitize_text_field($_POST['course_status'] ?? 'CLOSED'));
+  update_post_meta($post_id, 'course_reg', sanitize_text_field($_POST['course_reg'] ?? ''));
+  update_post_meta($post_id, 'ects_number', (int) ($_POST['ects_number'] ?? 0));
+
+  wp_redirect(wp_get_referer());
+  exit;
+});
+
+
+/**
+ * =========================================================
+ * ✅ ADMIN SEED COURSES (NO WP-CLI)
+ * Tools → Seed Courses
+ * =========================================================
+ */
 
 add_action('admin_menu', function () {
   add_management_page(
@@ -782,7 +777,7 @@ function ppl_seed_courses_admin_page()
     ppl_seed_courses_run((int)($_POST['count'] ?? 50));
     echo '<div class="updated notice"><p>✅ Courses seeded successfully.</p></div>';
   }
-?>
+  ?>
   <div class="wrap">
     <h1>Seed Courses</h1>
 
@@ -805,346 +800,11 @@ function ppl_seed_courses_admin_page()
       </p>
     </form>
   </div>
-<?php
+  <?php
 }
-
-/**
- * Build a varied course title with MAX 100 characters (<=100)
- */
-function ppl_seed_course_title($i = 1)
-{
-  $prefix = [
-    'Comprehensive', 'Advanced', 'Applied', 'Industry-Oriented', 'Interdisciplinary',
-    'Research-Focused', 'Practical', 'Intensive', 'Project-Based', 'Professional'
-  ];
-
-  $topic = [
-    'Artificial Intelligence and Machine Learning',
-    'Data Science and Predictive Analytics',
-    'Cybersecurity and Digital Resilience',
-    'Cloud Computing and Distributed Systems',
-    'Internet of Things and Smart Systems',
-    'Sustainability and Green Digital Transformation',
-    'Human-Centered Computing and UX Design',
-    'Software Engineering and DevOps Practices',
-    'Digital Innovation and Emerging Technologies',
-    'Responsible AI and Ethics in Technology'
-  ];
-
-  $focus = [
-    'including Industry Examples and Applied Case Studies',
-    'with Practical Workshops and Hands-on Learning Activities',
-    'covering Tools, Methods and Implementation Strategies',
-    'with Guided Exercises and Portfolio-Based Assessment',
-    'including Team Assignments and Capstone Evaluation'
-  ];
-
-  $t = sprintf(
-    '%s course on %s %s (Course #%d)',
-    $prefix[array_rand($prefix)],
-    $topic[array_rand($topic)],
-    $focus[array_rand($focus)],
-    $i
-  );
-
-  $max = 100;
-
-  if (mb_strlen($t) > $max) {
-    $cut = mb_substr($t, 0, $max - 1);
-    $cut = preg_replace('/\s+\S*$/u', '', $cut);
-    $t = rtrim($cut) . '…';
-  }
-
-  if (mb_strlen($t) > $max) {
-    $t = mb_substr($t, 0, $max);
-  }
-
-  return $t;
-}
-/**
- * ✅ Long + varied Additional Info generator
- */
-function ppl_seed_course_additional_info($i = 1)
-{
-  $audience = [
-    'BA students with basic programming foundations',
-    'MA students aiming to deepen applied skills',
-    'PhD candidates focusing on research methods and critique',
-    'staff members interested in professional upskilling',
-    'mixed-level cohorts (BA/MA) with guided onboarding materials',
-  ];
-
-  $workload = [
-    '4–6 hours per week (videos, readings, and short quizzes)',
-    '6–8 hours per week including practical labs',
-    '8–10 hours per week with a project-based assignment',
-    '3–5 hours per week with optional deep-dive materials',
-  ];
-
-  $assessment = [
-    'weekly quizzes (30%), mini-project (30%), final reflection (40%)',
-    'labs (40%), group task (20%), final project (40%)',
-    'participation (20%), case study report (30%), final exam (50%)',
-    'portfolio tasks (60%) + final presentation (40%)',
-  ];
-
-  $recognition = [
-    'Recognition depends on your home programme rules. Please confirm whether it can be transferred as core/optional/elective credit.',
-    'Before enrolling, confirm recognition with your programme coordinator (core/optional/elective).',
-    'Credit recognition is handled by your home university; verify the mapping in advance to avoid scheduling conflicts.',
-  ];
-
-  $requirements = [
-    'Basic Python or equivalent programming experience is recommended.',
-    'Familiarity with statistics fundamentals (mean, variance, distributions) will be helpful.',
-    'A stable internet connection and a laptop capable of running standard development tools are required.',
-    'No advanced prerequisites, but motivation for self-paced learning is expected.',
-    'Prior coursework in algorithms/data structures is beneficial but not mandatory.',
-  ];
-
-  $learning_outcomes = [
-    'Understand key concepts and terminology used in contemporary digital systems.',
-    'Apply practical tools to solve real-world problems using structured workflows.',
-    'Evaluate trade-offs, constraints, and ethical considerations in applied scenarios.',
-    'Communicate technical results clearly using reports, dashboards, or presentations.',
-  ];
-
-  $tools = [
-    'Jupyter / VS Code, Git, and cloud-based notebooks',
-    'a learning platform (LMS) with discussion forum and submission portal',
-    'Zoom/Teams for live Q&A sessions (optional)',
-    'a shared repository for templates and starter kits',
-  ];
-
-  $support = [
-    'You will have access to weekly office hours and a moderated Q&A forum.',
-    'Support is provided via email and the course discussion board within 48 hours (business days).',
-    'A short onboarding session and setup checklist will be available in week 0.',
-  ];
-
-  $pick = function ($arr) {
-    return $arr[array_rand($arr)];
-  };
-
-  // Make it longer by composing multiple paragraphs + bullets
-  $p1 = sprintf(
-    '<p><strong>Additional information:</strong> This course is designed for <em>%s</em>. Expected workload is <strong>%s</strong>. Assessment typically follows: <strong>%s</strong>.</p>',
-    esc_html($pick($audience)),
-    esc_html($pick($workload)),
-    esc_html($pick($assessment))
-  );
-
-  $p2 = sprintf(
-    '<p><strong>Recognition & scheduling:</strong> %s %s</p>',
-    esc_html($pick($recognition)),
-    esc_html($pick([
-      'Please also compare the course timeline with your local teaching period.',
-      'If your semester dates differ, you can still participate as extracurricular learning.',
-      'Seats may be limited; earlier enrolment is recommended.',
-    ]))
-  );
-
-  $p3 = '<p><strong>Technical & academic requirements:</strong></p><ul>';
-  $reqs = $requirements;
-  shuffle($reqs);
-  foreach (array_slice($reqs, 0, 3) as $r) {
-    $p3 .= '<li>' . esc_html($r) . '</li>';
-  }
-  $p3 .= '</ul>';
-
-  $p4 = '<p><strong>Learning outcomes:</strong></p><ul>';
-  $outs = $learning_outcomes;
-  shuffle($outs);
-  foreach (array_slice($outs, 0, 3) as $o) {
-    $p4 .= '<li>' . esc_html($o) . '</li>';
-  }
-  $p4 .= '</ul>';
-
-  $p5 = sprintf(
-    '<p><strong>Tools & support:</strong> You will use %s. %s</p>',
-    esc_html($pick($tools)),
-    esc_html($pick($support))
-  );
-
-  // Variation hook: add a short “note” block sometimes
-  $note = '';
-  if (rand(0, 1) === 1) {
-    $note = sprintf(
-      '<blockquote><strong>Note:</strong> %s</blockquote>',
-      esc_html($pick([
-        'Group work may involve cross-university teams and peer feedback.',
-        'Some materials are released weekly; plan ahead for deadlines.',
-        'If you miss the first week, you can still catch up using the recorded sessions.',
-        'Participation in forums may be part of the final evaluation.',
-      ]))
-    );
-  }
-
-  // Ensure it’s long and varied
-  return $p1 . $p2 . $p3 . $p4 . $p5 . $note;
-}
-
-/**
- * ✅ Varied long-titles + varied content generator for seeded courses
- */
-function ppl_seed_course_content($i = 1)
-{
-  // your existing generator 그대로
-  // (same as before – cut for brevity? NO, keeping full)
-  $section_titles = [
-    'registration' => [
-      'Registration procedure and application timeline for this course',
-      'Course registration procedure with key eligibility and deadlines',
-      'How to register: admission rules, confirmation steps and timeline',
-    ],
-    'enrolment' => [
-      'Online enrolment system and step-by-step application process',
-      'Online enrolment platform details and guidance for applicants',
-      'Digital enrolment system for course registration and approval',
-    ],
-    'important' => [
-      'Important information to consider before submitting enrolment',
-      'Important notes regarding schedule alignment and recognition',
-      'Key information before enrolling: schedules, credits and rules',
-    ],
-    'periods' => [
-      'Enrolment periods, application windows and course start dates',
-      'Application windows and official course start schedule overview',
-      'Key enrolment periods and the confirmed start of classes',
-    ],
-    'contact' => [
-      'Contact information for enrolment questions and course support',
-      'Who to contact for registration, recognition and course details',
-      'Contact details for academic and administrative assistance',
-    ],
-  ];
-
-  $enrol_guides = [
-    ['title' => 'ONLINE ENROLMENT SYSTEM', 'url' => '#'],
-    ['title' => 'UW ENROLMENT GUIDE', 'url' => '#'],
-    ['title' => 'ENROLMENT GUIDE AND INSTRUCTIONS', 'url' => '#'],
-    ['title' => 'HOW TO ENROL (GUIDE)', 'url' => '#'],
-  ];
-
-  $principles = [
-    'Course admission is determined based on a “first come, first served” principle and/or consent of the course convenor (academic staff member responsible for coordinating and teaching the course).',
-    'Admission is granted on a “first come, first served” basis and in some cases requires approval by the course convenor.',
-    'Places are allocated primarily on a “first come, first served” basis; some courses may require the convenor’s consent depending on capacity.',
-  ];
-
-  $agreement_lines = [
-    'Confirmation of the student status at a 4EU+ member university is required only via 4EU+ Learning Agreement.',
-    'Student status at a 4EU+ member university is confirmed via the 4EU+ Learning Agreement.',
-    'A valid 4EU+ Learning Agreement is required to confirm your student status before final approval.',
-  ];
-
-  $important_notes = [
-    'The start dates of online courses may not correspond with the start of the teaching period at your home institution.',
-    'Online course schedules may differ from the teaching period at your home institution; please plan accordingly.',
-    'Please note that online courses can begin earlier or later than your home university teaching period.',
-  ];
-
-  $recognition_notes = [
-    'Please check with an adviser at your home institution whether the course you have selected will be recognised in your programme as a core, optional or elective course.',
-    'Consult your programme adviser at your home institution to confirm whether the course will be recognised as core/optional/elective.',
-    'Check recognition rules at your home institution (core/optional/elective) before enrolling.',
-  ];
-
-  $extra_notes = [
-    'If the course cannot be recognised as part of your degree programme, you can still take it as a form of extracurricular activity.',
-    'If recognition is not possible, you may still attend as an extracurricular learning activity.',
-    'Even without recognition, you can participate as extracurricular learning.',
-  ];
-
-  $openers = [
-    '',
-    '<p><strong>Overview:</strong> This course is part of the 4EU+ learning offer. Please read the enrolment information carefully.</p>',
-    '<p><strong>Overview:</strong> You can enrol online according to the timeline below. Seats may be limited.</p>',
-  ];
-
-  $contact_emails = [
-    '4euplus.mobility@uw.edu.pl',
-    'mobility@4euplus.eu',
-    'courses@4euplus.eu',
-    'learning@4euplus.eu',
-  ];
-
-  $year = (int) date('Y');
-  $month = rand(2, 11);
-  $start_day = rand(1, 18);
-
-  $p1_from = sprintf('%02d %s', $start_day, date('F', mktime(0, 0, 0, $month, 1, $year)));
-  $p1_to_day = min($start_day + rand(7, 14), 28);
-  $p1_to = sprintf('%02d %s', $p1_to_day, date('F', mktime(0, 0, 0, $month, 1, $year)));
-
-  $p2_month = $month + 1;
-  $p2_year = $year;
-  if ($p2_month > 12) { $p2_month = 1; $p2_year++; }
-
-  $p2_from_day = rand(1, 10);
-  $p2_to_day = min($p2_from_day + rand(4, 8), 28);
-
-  $p2_from = sprintf('%02d %s', $p2_from_day, date('F', mktime(0, 0, 0, $p2_month, 1, $p2_year)));
-  $p2_to = sprintf('%02d %s', $p2_to_day, date('F', mktime(0, 0, 0, $p2_month, 1, $p2_year)));
-
-  $courses_begin_day = rand(1, 12);
-  $courses_begin = sprintf('%02d %s %d', $courses_begin_day, date('F', mktime(0, 0, 0, $p2_month, 1, $p2_year)), $p2_year);
-
-  $pick_title = function ($key) use ($section_titles) {
-    $arr = $section_titles[$key] ?? [];
-    if (empty($arr)) return '';
-    return $arr[array_rand($arr)];
-  };
-
-  $g = $enrol_guides[array_rand($enrol_guides)];
-  $principle = $principles[array_rand($principles)];
-  $agreement = $agreement_lines[array_rand($agreement_lines)];
-  $note1 = $important_notes[array_rand($important_notes)];
-  $note2 = $recognition_notes[array_rand($recognition_notes)];
-  $note3 = $extra_notes[array_rand($extra_notes)];
-  $email = $contact_emails[array_rand($contact_emails)];
-  $opener = $openers[array_rand($openers)];
-
-  $h1 = $pick_title('registration');
-  $h2 = $pick_title('enrolment');
-  $h3 = $pick_title('important');
-  $h4 = $pick_title('periods');
-  $h5 = $pick_title('contact');
-
-  $html = <<<HTML
-{$opener}
-
-<h2>{$h1}</h2>
-<p>Once you have made your choice, please refer to our enrolment guide. {$principle} {$agreement}</p>
-
-<h2>{$h2}</h2>
-<ul>
-  <li><a href="{$g['url']}" target="_blank" rel="noopener noreferrer">{$g['title']}</a></li>
-</ul>
-
-<h2>{$h3}</h2>
-<ul>
-  <li>{$note1}</li>
-  <li>{$note2}</li>
-  <li>{$note3}</li>
-</ul>
-
-<h2>{$h4}</h2>
-<ul>
-  <li><strong>{$p1_from} – {$p1_to}:</strong> 1st enrolment period</li>
-  <li><strong>{$p2_from} – {$p2_to}:</strong> 2nd enrolment period</li>
-  <li><strong>{$courses_begin}:</strong> Courses begin</li>
-</ul>
-
-<h2>{$h5}</h2>
-<p>If you have any question, please contact us at <a href="mailto:{$email}">{$email}</a>.</p>
-HTML;
-
-  return $html;
-}
-
 function ppl_seed_courses_run($count = 50)
 {
+  // ✅ DATA
   $data = [
     'course_university' => [
       'Bialystock University of Technology',
@@ -1165,7 +825,7 @@ function ppl_seed_courses_run($count = 50)
     'course_language' => ['DE', 'EN', 'FR', 'IT'],
   ];
 
-  // CLEAN OLD COURSES
+  // ✅ CLEAN OLD COURSES
   $old = get_posts([
     'post_type' => 'course',
     'posts_per_page' => -1,
@@ -1176,7 +836,7 @@ function ppl_seed_courses_run($count = 50)
     wp_delete_post($pid, true);
   }
 
-  // ENSURE TERMS
+  // ✅ ENSURE TERMS
   foreach ($data as $tax => $names) {
     foreach ($names as $name) {
       if (!term_exists($name, $tax)) {
@@ -1191,40 +851,20 @@ function ppl_seed_courses_run($count = 50)
     return [(int)$terms[array_rand($terms)]->term_id];
   };
 
+  $titles = ['Intro to', 'Advanced', 'Applied', 'Seminar on', 'Microcredential in'];
+  $subjects = ['AI', 'Data Science', 'Cybersecurity', 'Cloud Computing', 'IoT', 'Sustainability'];
+
   for ($i = 1; $i <= $count; $i++) {
 
     $post_id = wp_insert_post([
-      'post_type'    => 'course',
-      'post_title'   => ppl_seed_course_title($i),
-      'post_content' => ppl_seed_course_content($i),
-      'post_status'  => 'publish',
+      'post_type' => 'course',
+      'post_title' => $titles[array_rand($titles)] . ' ' . $subjects[array_rand($subjects)] . " #{$i}",
+      'post_content' => 'Auto seeded course.',
+      'post_status' => 'publish',
     ]);
 
     if (!$post_id || is_wp_error($post_id)) continue;
 
-    // ✅ Seed lecturers (array format same as metabox save)
-    $lecturer_names = [
-      'Charlotte Denizeau', 'John Doe', 'Maria Nowak', 'Alex Johnson',
-      'Sofia Rossi', 'Liam Müller', 'Elena Garcia', 'Noah Smith',
-      'Amina Khan', 'Jakub Zielinski'
-    ];
-    $lecturer_emails = [
-      'charlotte@uni.edu', 'john@uni.edu', 'maria@uni.edu', 'alex@uni.edu',
-      'sofia@uni.edu', 'liam@uni.edu', 'elena@uni.edu', 'noah@uni.edu',
-      'amina@uni.edu', 'jakub@uni.edu'
-    ];
-
-    $lecturers = [];
-    $how_many = rand(1, 3);
-    for ($k = 0; $k < $how_many; $k++) {
-      $idx = array_rand($lecturer_names);
-      $lecturers[] = [
-        'name'  => $lecturer_names[$idx],
-        'email' => $lecturer_emails[$idx] ?? '',
-      ];
-    }
-
-    // Terms
     wp_set_post_terms($post_id, $pick('course_university'), 'course_university');
     wp_set_post_terms($post_id, $pick('course_format'), 'course_format');
     wp_set_post_terms($post_id, $pick('course_target'), 'course_target');
@@ -1232,13 +872,9 @@ function ppl_seed_courses_run($count = 50)
     wp_set_post_terms($post_id, $pick('course_semester_availability'), 'course_semester_availability');
     wp_set_post_terms($post_id, $pick('course_type'), 'course_type');
 
-    // ✅ Seed ONLY needed meta (no curriculum/period/start/end)
     update_post_meta($post_id, 'course_status', rand(0, 1) ? 'OPEN' : 'CLOSED');
-    update_post_meta($post_id, 'ects_number', rand(1, 30));
+    update_post_meta($post_id, 'ects_number', rand(1, 30)); // ✅ 1–30
     update_post_meta($post_id, 'course_reg', date('Y-m-d', strtotime('+' . rand(5, 120) . ' days')));
-    update_post_meta($post_id, 'course_reg_link', 'https://example.com/apply?course=' . $post_id);
     update_post_meta($post_id, 'course_contact_email', 'info@example.com');
-    update_post_meta($post_id, 'course_additional_info', ppl_seed_course_additional_info($i));
-    update_post_meta($post_id, 'course_lecturers', $lecturers);
   }
 }

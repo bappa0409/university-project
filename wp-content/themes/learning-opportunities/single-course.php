@@ -28,9 +28,6 @@ while (have_posts()) : the_post();
     return implode(', ', array_map(fn($t) => $t->name, $terms));
   };
 
-  $areas     = $get_terms_str('course_area');
-  $flagships = $get_terms_str('course_flagship');
-  $pathways  = $get_terms_str('course_learning_pathway');
   $targets   = $get_terms_str('course_target');
   $formats   = $get_terms_str('course_format');
   $langs     = $get_terms_str('course_language');
@@ -61,191 +58,7 @@ while (have_posts()) : the_post();
   if ($status === 'OPEN' && $reg) $banner = 'Registration OPEN until ' . $fmt_date($reg);
   if ($status !== 'OPEN') $banner = 'Registration CLOSED';
 ?>
-  <!-- <style>
-    .course-wrap {
-      padding: 18px 0 36px;
-    }
-
-    .container {
-      max-width: 1180px;
-      margin: 0 auto;
-      padding: 0 18px
-    }
-
-    .course-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 18px;
-      align-items: start;
-    }
-
-    @media(max-width:860px) {
-      .course-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .course-card {
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: 0 6px 6px;
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }
-
-    .course-card .hd {
-      padding: 18px 15px;
-      border-bottom: 1px solid var(--line);
-      font-weight: 700;
-    }
-
-    .course-card .bd {
-      padding: 12px 14px 14px;
-    }
-
-    .kv {
-      display: grid;
-    }
-
-    .row {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 8px 0;
-      border-bottom: 1px solid rgb(2 6 23 / 22%);
-    }
-
-    .row:last-child {
-      border-bottom: 0;
-    }
-
-    .key {
-      color: #212222;
-      font-size: 13px;
-      min-width: 140px;
-    }
-
-    .val {
-      font-weight: 700;
-      font-size: 13px;
-      text-align: right;
-    }
-
-    .val .lecturer-item {
-      margin-bottom: 8px;
-    }
-
-    .val .lecturer-item:last-child {
-      margin-bottom: 0;
-    }
-
-    .val .lecturer-name {
-      font-weight: 900;
-    }
-
-
-    .tabs {
-      margin-top: 18px;
-    }
-
-    .tabbar {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .tabbtn {
-      flex: 0 1 auto;
-      border: 1px solid var(--line);
-      background: #fff;
-      padding: 15px 15px;
-      border-radius: 5px 5px 0 0;
-      cursor: pointer;
-      font-weight: 700;
-      font-size: 13px;
-      border-bottom: 0;
-      white-space: nowrap;
-
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    @media (max-width: 768px) {
-      .tabbar {
-        display: flex;
-        gap: 5px;
-        flex-wrap: nowrap;
-      }
-
-      .tabbtn {
-        flex: 1 1 0;
-        /* ৩টি ট্যাবকে সমান জায়গা দেবে */
-        min-width: 0;
-        /* কন্টেন্ট ওভারফ্লো রোধ করবে */
-        padding: 10px 5px;
-        font-size: 12px;
-        line-height: 1.2;
-        white-space: normal;
-        /* লেখা ভাঙার অনুমতি দেবে */
-        text-align: center;
-      }
-
-      .tabbtn span {
-        display: inline-block;
-        /* মোবাইলে স্প্যানকে ব্লকের মতো কাজ করতে সাহায্য করবে */
-        word-spacing: 100vw;
-        /* এটি প্রতিটি শব্দকে ফোর্স করে পরের লাইনে পাঠাবে */
-        max-width: min-content;
-        /* কন্টেন্ট অনুযায়ী চওড়া হবে */
-        margin: 0 auto;
-      }
-
-      .course-card {
-        border-radius: 0 0 6px 6px;
-      }
-    }
-
-    .tabbtn[aria-selected="true"] {
-      background: #1e5af5 !important;
-      color: #fff !important;
-    }
-
-    .tabpanel {
-      display: none;
-    }
-
-    .tabpanel.is-active {
-      display: block;
-    }
-
-    .link {
-      color: var(--brand);
-      text-decoration: underline;
-      word-break: break-word;
-    }
-
-    .note {
-      padding: 10px 12px;
-      border-radius: 10px;
-      background: rgba(245, 158, 11, .10);
-      border: 1px solid rgba(245, 158, 11, .20);
-    }
-
-    .lect {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 10px 0;
-      border-bottom: 1px solid rgba(2, 6, 23, .06);
-    }
-
-    .lect:last-child {
-      border-bottom: 0;
-    }
-  </style> -->
-
+  
   <section class="hero" style="<?php echo $default_hero_path ? ' --hero-bg: url(' . esc_url($default_hero_path) . '); --hero-blur: ' . esc_attr($hero_blur) . 'px;' : ''; ?>">
     <div class="container">
       <div class="breadcrumbs">
@@ -258,8 +71,6 @@ while (have_posts()) : the_post();
   </section>
 
 
-
-
   <main class="content">
     <div class="container course-page">
       <div class="course-layout">
@@ -268,7 +79,7 @@ while (have_posts()) : the_post();
         <div class="course-tabs" data-course-tabs>
           <div class="course-tabbar" role="tablist" aria-label="Course Tabs">
             <button class="course-tabbtn" role="tab" aria-selected="true" data-tab="overview">Overview</button>
-            <button class="course-tabbtn" role="tab" aria-selected="false" data-tab="curriculum">Curriculum</button>
+            <button class="course-tabbtn" role="tab" aria-selected="false" data-tab="additional_info">Additional Info</button>
             <button class="course-tabbtn" role="tab" aria-selected="false" data-tab="instructor">Instructor</button>
             <button class="course-tabbtn" role="tab" aria-selected="false" data-tab="reviews">Reviews</button>
           </div>
@@ -280,19 +91,20 @@ while (have_posts()) : the_post();
             </div>
           </section>
 
-          <!-- Curriculum (optional meta: course_curriculum) -->
-          <section class="course-panel" role="tabpanel" data-panel="curriculum">
+          <!-- Additional Info -->
+          <section class="course-panel" role="tabpanel" data-panel="additional_info">
             <div class="course-content">
               <?php
-              $curriculum = get_post_meta($post_id, 'course_curriculum', true);
-              if ($curriculum) {
-                echo wp_kses_post(wpautop($curriculum));
-              } else {
-                echo '<p class="muted">No curriculum added yet.</p>';
-              }
+                $add_info = get_post_meta($post_id, 'course_additional_info', true);
+                if ($add_info) {
+                  echo wp_kses_post(wpautop($add_info));
+                } else {
+                  echo '<p class="muted">No additional information added yet.</p>';
+                }
               ?>
             </div>
           </section>
+
 
           <!-- Instructor -->
           <section class="course-panel" role="tabpanel" data-panel="instructor">
@@ -338,6 +150,15 @@ while (have_posts()) : the_post();
         <aside class="course-aside">
           <div class="ess-card">
 
+            <?php
+              $status = strtoupper((string) get_post_meta($post_id, 'course_status', true));
+              if (!$status) $status = 'CLOSED';
+              $ribbon_class = ($status === 'OPEN') ? 'is-open' : 'is-closed';
+            ?>
+            <div class="ppl-ribbon <?php echo esc_attr($ribbon_class); ?>">
+              <?php echo esc_html($status); ?>
+            </div>
+
             <div class="ess-media">
               <?php if (has_post_thumbnail()): ?>
                 <?php the_post_thumbnail('large'); ?>
@@ -347,20 +168,73 @@ while (have_posts()) : the_post();
             </div>
 
             <?php
-            // Optional meta you can add later if you want
-            $price    = get_post_meta($post_id, 'course_price', true);       // e.g. 70.00
-            $duration = get_post_meta($post_id, 'course_duration', true);    // e.g. 40 hours 20 minutes
-            $lessons  = get_post_meta($post_id, 'course_lessons', true);     // e.g. 12
-            $enrolled = get_post_meta($post_id, 'course_enrolled', true);    // e.g. 120
-            $level    = get_post_meta($post_id, 'course_level', true);       // e.g. All Levels
+              // Term strings (already available above)
+              $semester  = $get_terms_str('course_semester_availability');
+              $ctype     = $get_terms_str('course_type');
 
-            $instructor_name = !empty($lecturers[0]['name']) ? $lecturers[0]['name'] : '—';
+              // Meta (seed/metabox অনুযায়ী)
+              $ects      = (int) get_post_meta($post_id, 'ects_number', true);
+              $reg       = get_post_meta($post_id, 'course_reg', true);
+              $reg_link  = get_post_meta($post_id, 'course_reg_link', true);
+              $contact   = get_post_meta($post_id, 'course_contact_email', true);
+
+              $status = strtoupper((string) get_post_meta($post_id, 'course_status', true));
+              if (!$status) $status = 'CLOSED';
+
+              $banner = ($status === 'OPEN' && $reg)
+                ? ('Registration OPEN until ' . $fmt_date($reg))
+                : 'Registration CLOSED';
+
+              // First lecturer name (fallback)
+              $instructor_name = !empty($lecturers[0]['name']) ? $lecturers[0]['name'] : '—';
             ?>
 
             <div class="ess-body">
               <div class="ess-title">Course Essentials</div>
 
+              <!-- small banner -->
+              <div class="muted" style="margin:6px 0 14px;">
+                <strong><?php echo esc_html($banner); ?></strong>
+              </div>
+
+              <!-- University logo + name -->
+              <?php if ($unis || $uni_logo): ?>
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+                  <?php if ($uni_logo): ?>
+                    <img src="<?php echo esc_url($uni_logo); ?>" alt=""
+                      style="width:44px;height:44px;object-fit:contain;border:1px solid rgba(2,6,23,.10);border-radius:10px;padding:6px;background:#fff;">
+                  <?php endif; ?>
+                  <div style="font-weight:800; line-height:1.2;">
+                    <?php echo $unis ? esc_html($unis) : '—'; ?>
+                    <div class="muted" style="font-weight:600; margin-top:2px;">University</div>
+                  </div>
+                </div>
+              <?php endif; ?>
+
               <div class="ess-list">
+
+                <div class="ess-row">
+                  <span class="ess-ic">
+                    <!-- check icon -->
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                      <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </span>
+                  <div class="ess-key">Status</div>
+                  <div class="ess-val"><?php echo esc_html($status); ?></div>
+                </div>
+
+                <div class="ess-row">
+                  <span class="ess-ic">
+                    <!-- calendar icon -->
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                      <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
+                      <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                  </span>
+                  <div class="ess-key">Registration up to</div>
+                  <div class="ess-val"><?php echo $reg ? esc_html($fmt_date($reg)) : '—'; ?></div>
+                </div>
 
                 <div class="ess-row">
                   <span class="ess-ic">
@@ -370,8 +244,8 @@ while (have_posts()) : the_post();
                       <path d="M7.5 7.5H7.51" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
                     </svg>
                   </span>
-                  <div class="ess-key">Price</div>
-                  <div class="ess-val"><?php echo $price !== '' ? esc_html('$' . number_format((float)$price, 2)) : '—'; ?></div>
+                  <div class="ess-key">ECTS</div>
+                  <div class="ess-val"><?php echo $ects ? esc_html($ects) : '—'; ?></div>
                 </div>
 
                 <div class="ess-row">
@@ -388,39 +262,27 @@ while (have_posts()) : the_post();
 
                 <div class="ess-row">
                   <span class="ess-ic">
-                    <!-- clock icon -->
+                    <!-- layers icon -->
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                      <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" />
-                      <path d="M12 7v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                      <path d="M12 2l9 5-9 5-9-5 9-5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                      <path d="M3 12l9 5 9-5" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                      <path d="M3 17l9 5 9-5" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
                     </svg>
                   </span>
-                  <div class="ess-key">Duration</div>
-                  <div class="ess-val"><?php echo $duration ? esc_html($duration) : '—'; ?></div>
+                  <div class="ess-key">Modality</div>
+                  <div class="ess-val"><?php echo $formats ? esc_html($formats) : '—'; ?></div>
                 </div>
 
                 <div class="ess-row">
                   <span class="ess-ic">
-                    <!-- book icon -->
+                    <!-- graduation cap icon -->
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                      <path d="M4 19a2 2 0 0 1 2-2h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                      <path d="M6 3h14v18H6a2 2 0 0 0-2 2V5a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+                      <path d="M12 3l10 5-10 5L2 8l10-5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                      <path d="M6 10v6c0 2 12 2 12 0v-6" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
                     </svg>
                   </span>
-                  <div class="ess-key">Lessons</div>
-                  <div class="ess-val"><?php echo $lessons !== '' ? esc_html($lessons) : '0'; ?></div>
-                </div>
-
-                <div class="ess-row">
-                  <span class="ess-ic">
-                    <!-- users icon -->
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                      <path d="M17 21a5 5 0 0 0-10 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                      <path d="M12 11a4 4 0 1 0-4-4a4 4 0 0 0 4 4Z" stroke="currentColor" stroke-width="2" />
-                      <path d="M21 21a4 4 0 0 0-6-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                    </svg>
-                  </span>
-                  <div class="ess-key">Enrolled</div>
-                  <div class="ess-val"><?php echo $enrolled !== '' ? esc_html($enrolled) : '0'; ?></div>
+                  <div class="ess-key">Study Program</div>
+                  <div class="ess-val"><?php echo $targets ? esc_html($targets) : '—'; ?></div>
                 </div>
 
                 <div class="ess-row">
@@ -432,8 +294,32 @@ while (have_posts()) : the_post();
                       <path d="M12 3c3 3.6 3 14.4 0 18c-3-3.6-3-14.4 0-18Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
                     </svg>
                   </span>
-                  <div class="ess-key">Course Level</div>
-                  <div class="ess-val"><?php echo $level ? esc_html($level) : 'All Levels'; ?></div>
+                  <div class="ess-key">Language</div>
+                  <div class="ess-val"><?php echo $langs ? esc_html($langs) : '—'; ?></div>
+                </div>
+
+                <div class="ess-row">
+                  <span class="ess-ic">
+                    <!-- sun icon -->
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/>
+                      <path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                  </span>
+                  <div class="ess-key">Semester availability</div>
+                  <div class="ess-val"><?php echo $semester ? esc_html($semester) : '—'; ?></div>
+                </div>
+
+                <div class="ess-row">
+                  <span class="ess-ic">
+                    <!-- file icon -->
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                      <path d="M14 2v6h6" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                    </svg>
+                  </span>
+                  <div class="ess-key">Course type</div>
+                  <div class="ess-val"><?php echo $ctype ? esc_html($ctype) : '—'; ?></div>
                 </div>
 
               </div>
@@ -445,13 +331,8 @@ while (have_posts()) : the_post();
                   </a>
                 <?php endif; ?>
 
-                <div class="muted" style="margin-top:2px;">
-                  Status: <strong><?php echo esc_html($status); ?></strong>
-                  <?php if ($reg): ?> • Registration up to: <strong><?php echo esc_html($fmt_date($reg)); ?></strong><?php endif; ?>
-                </div>
-
                 <?php if ($contact): ?>
-                  <div class="muted">
+                  <div class="muted" style="margin-top:10px;">
                     Questions? <a class="link" href="mailto:<?php echo esc_attr($contact); ?>"><?php echo esc_html($contact); ?></a>
                   </div>
                 <?php endif; ?>
@@ -460,6 +341,7 @@ while (have_posts()) : the_post();
             </div>
           </div>
         </aside>
+
 
       </div>
     </div>

@@ -156,6 +156,8 @@ $meta_icon = function ($label) {
       <div class="breadcrumbs"><span>Home</span></div>
       <h1 class="hero-title">Learning opportunities</h1>
     </div>
+
+    <div class="hero-keyvisual" aria-hidden="true"></div>
     <div class="hero-overlay" aria-hidden="true"></div>
   </section>
 
