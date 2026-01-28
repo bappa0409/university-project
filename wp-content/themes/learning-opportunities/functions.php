@@ -802,7 +802,6 @@ function ppl_seed_courses_admin_page()
   </div>
   <?php
 }
-
 function ppl_seed_courses_run($count = 50)
 {
   // ✅ DATA
