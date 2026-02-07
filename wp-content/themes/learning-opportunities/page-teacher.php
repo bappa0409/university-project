@@ -60,8 +60,15 @@ if ($hero_img_id) {
 </section>
 
 <section class="content">
+    <div class="container">
+    <?php if ($flash_success): ?>
+              <div style="padding: 10px 12px; border-radius: 4px; border: 1px solid rgba(16, 185, 129, .35); background: green; margin-bottom: 12px; color: white; font-size: 14px;">
+                <?php echo esc_html($flash_success); ?>
+              </div>
+            <?php endif; ?>
+            </div>
     <div class="container grid" style="grid-template-columns: 380px 1fr;">
-
+        
       <!-- LEFT -->
       <aside class="sidebar" aria-label="Teacher submit">
         <div class="sb-card" style="background:#fff; border:1px solid rgba(2,6,23,.10); border-radius:6px; box-shadow: var(--shadow); overflow:hidden;">
@@ -70,13 +77,6 @@ if ($hero_img_id) {
           </div>
 
           <div class="sb-body" style="padding: 12px 14px 14px;">
-
-            <?php if ($flash_success): ?>
-              <div style="padding:10px 12px; border-radius:6px; border:1px solid rgba(16,185,129,.35); background: rgba(16,185,129,.10); margin-bottom:12px;">
-                <?php echo esc_html($flash_success); ?>
-              </div>
-            <?php endif; ?>
-
             <?php if ($flash_error): ?>
               <div style="padding:10px 12px; border-radius:6px; border:1px solid rgba(239,68,68,.30); background: rgba(239,68,68,.10); margin-bottom:12px;">
                 <?php echo esc_html($flash_error); ?>
