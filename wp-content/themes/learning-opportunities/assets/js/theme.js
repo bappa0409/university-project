@@ -1,38 +1,50 @@
 /**
  * =========================================================
- * assets/js/theme.js (FULL) — UPDATED
+ * assets/js/theme.js (FULL) — CLEAN (NO TEACHER MODAL)
  * - Enter on search input submits form
  * - No auto-submit on checkbox/date/slider/typing/clear
- * - Accordion preserves open state if aria-expanded true
+ * - ✅ Accordion robust toggle (sidebar + teacher page)
  * - MORE preserves open state if any checkbox checked inside
+ * - Footer logo slider drag
  * =========================================================
  */
 (function () {
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
-  // Accordion toggle (only for .acc sections)
+  /* =========================
+     ✅ Accordion (ROBUST)
+     ========================= */
   $$(".acc").forEach((btn) => {
-    const panel = btn.nextElementSibling;
+    const section = btn.closest(".sb-section");
+    const panel = section ? section.querySelector(".acc-panel") : null;
 
-    // Ensure initial UI matches aria-expanded (server sets it)
+    // initial state from aria-expanded
     if (panel) {
       const expanded = btn.getAttribute("aria-expanded") === "true";
       panel.style.display = expanded ? "block" : "none";
     }
 
-    btn.addEventListener("click", () => {
-      const panel = btn.nextElementSibling;
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+
+      const section = btn.closest(".sb-section");
+      const panel = section ? section.querySelector(".acc-panel") : null;
+
       const expanded = btn.getAttribute("aria-expanded") === "true";
       btn.setAttribute("aria-expanded", String(!expanded));
       if (panel) panel.style.display = expanded ? "none" : "block";
     });
   });
 
-  // Find sidebar form (if exists)
+  /* =========================
+     Sidebar form (if exists)
+     ========================= */
   const sidebarForm = document.querySelector(".sidebar form");
 
-  // ECTS range live label (NO auto submit)
+  /* =========================
+     ECTS range live label
+     ========================= */
   const ects = $("#ects");
   const ectsVal = $("#ectsVal");
   if (ects && ectsVal) {
@@ -41,7 +53,9 @@
     sync();
   }
 
-  // SEARCH input behaviors (Enter submit, NO clear auto submit)
+  /* =========================
+     Search input: Enter submit
+     ========================= */
   const searchInput = $("#course-search");
   if (searchInput) {
     const wrap = searchInput.closest(".input-wrap");
@@ -56,7 +70,7 @@
 
     searchInput.addEventListener("input", syncClear);
 
-    // ✅ Enter চাপলে submit হবে
+    // Enter => submit
     searchInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
@@ -65,7 +79,7 @@
       }
     });
 
-    // Clear button (NO auto submit)
+    // Clear (no auto submit)
     if (clearBtn) {
       clearBtn.addEventListener("click", () => {
         searchInput.value = "";
@@ -75,7 +89,9 @@
     }
   }
 
-  // MORE expand/collapse (keep open if any checked)
+  /* =========================
+     MORE expand/collapse
+     ========================= */
   $$("[data-more]").forEach((wrap) => {
     const items = $("[data-more-items]", wrap);
     const btn = $("[data-more-btn]", wrap);
@@ -97,21 +113,15 @@
     });
   });
 
-  /**
-   * =========================================================
-   * ✅ Footer University Logo Slider (Mouse drag)
-   * - No arrows
-   * - No auto sliding
-   * - Drag with mouse, swipe works on mobile by default
-   * =========================================================
-   */
+  /* =========================
+     Footer University Logo Slider (Mouse drag)
+     ========================= */
   const logoSlider = document.querySelector(".logo-bar .ppl-uni-logos");
   if (logoSlider) {
     let isDown = false;
     let startX = 0;
     let scrollLeft = 0;
 
-    // Prevent image dragging (so mouse drag scroll feels good)
     logoSlider.querySelectorAll("img").forEach((img) => {
       img.setAttribute("draggable", "false");
     });
@@ -137,50 +147,9 @@
       if (!isDown) return;
       e.preventDefault();
       const x = e.pageX - logoSlider.offsetLeft;
-      const walk = (x - startX) * 1.2; // drag speed
+      const walk = (x - startX) * 1.2;
       logoSlider.scrollLeft = scrollLeft - walk;
     });
   }
 
-  // Chip close: only remove the tag from UI (no search change)
-  document.addEventListener("click", (e) => {
-    const btn = e.target.closest(".chip-close");
-    if (!btn) return;
-
-    const chip = btn.closest(".chip");
-    if (chip) chip.remove();
-  });
-
-  document.addEventListener('DOMContentLoaded', function () {
-  const openBtn = document.getElementById('openTeacherForm');
-  const modal = document.getElementById('teacherModal');
-  const closeBtn = document.getElementById('closeTeacherForm');
-
-  if (!openBtn || !modal) return;
-
-  // Open modal
-  openBtn.addEventListener('click', function (e) {
-    e.preventDefault();
-    modal.style.display = 'block';
-    document.body.style.overflow = 'hidden';
-  });
-
-  // Close modal
-  function closeModal() {
-    modal.style.display = 'none';
-    document.body.style.overflow = '';
-  }
-
-  closeBtn.addEventListener('click', closeModal);
-
-  // Click outside content
-  modal.addEventListener('click', function (e) {
-    if (e.target === modal) closeModal();
-  });
-
-  // ESC key
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') closeModal();
-  });
-});
 })();

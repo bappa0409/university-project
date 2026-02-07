@@ -15,6 +15,10 @@ if (!defined('ABSPATH')) {
   exit;
 }
 
+add_action('init', function () {
+  if (!session_id()) session_start();
+});
+
 /* =========================
    Theme setup + assets
    ========================= */
@@ -1242,3 +1246,128 @@ function ppl_seed_courses_run($count = 50)
     update_post_meta($post_id, 'course_lecturers', $lecturers);
   }
 }
+
+/* =========================================================
+   ✅ FRONTEND Teacher Submit Handler (FULL)
+   - Creates course as PENDING
+   - Saves meta + taxonomies + lecturers
+   - ✅ FIX: taxonomy slugs => term_ids (no term creation attempts)
+   - ✅ FIX: clean URL (no ?ppl_success=1), uses SESSION flash messages
+   ========================================================= */
+
+add_action('template_redirect', function () {
+  if ($_SERVER['REQUEST_METHOD'] !== 'POST') return;
+  if (empty($_POST['ppl_teacher_action']) || $_POST['ppl_teacher_action'] !== 'submit_course') return;
+
+  if (!session_id()) session_start();
+
+  // nonce check
+  if (empty($_POST['ppl_teacher_nonce']) || !wp_verify_nonce($_POST['ppl_teacher_nonce'], 'ppl_teacher_submit_course')) {
+    $_SESSION['ppl_flash_error'] = 'Submission failed. Invalid request.';
+    wp_safe_redirect(wp_get_referer() ?: home_url('/teacher/'));
+    exit;
+  }
+
+  // Required: title
+  $title = isset($_POST['course_title']) ? sanitize_text_field(wp_unslash($_POST['course_title'])) : '';
+  if ($title === '') {
+    $_SESSION['ppl_flash_error'] = 'Submission failed. Title is required.';
+    wp_safe_redirect(wp_get_referer() ?: home_url('/teacher/'));
+    exit;
+  }
+
+  // Create post (pending)
+  $post_id = wp_insert_post([
+    'post_type'    => 'course',
+    'post_title'   => $title,
+    'post_content' => isset($_POST['course_content']) ? wp_kses_post(wp_unslash($_POST['course_content'])) : '',
+    'post_status'  => 'pending',
+  ]);
+
+  if (!$post_id || is_wp_error($post_id)) {
+    $_SESSION['ppl_flash_error'] = 'Submission failed. Could not create course.';
+    wp_safe_redirect(wp_get_referer() ?: home_url('/teacher/'));
+    exit;
+  }
+
+  /* -------------------------
+     ✅ Meta
+     ------------------------- */
+  $status = isset($_POST['course_status']) ? strtoupper(sanitize_text_field(wp_unslash($_POST['course_status']))) : 'CLOSED';
+  if (!in_array($status, ['OPEN', 'CLOSED'], true)) $status = 'CLOSED';
+
+  $ects_number = isset($_POST['ects_number']) ? (int) $_POST['ects_number'] : 0;
+  if ($ects_number < 0) $ects_number = 0;
+
+  $reg = isset($_POST['course_reg']) ? sanitize_text_field(wp_unslash($_POST['course_reg'])) : '';
+  $reg = preg_match('/^\d{4}-\d{2}-\d{2}$/', $reg) ? $reg : '';
+
+  $reg_link = isset($_POST['course_reg_link']) ? esc_url_raw(wp_unslash($_POST['course_reg_link'])) : '';
+  $contact  = isset($_POST['course_contact_email']) ? sanitize_email(wp_unslash($_POST['course_contact_email'])) : '';
+  $add_info = isset($_POST['course_additional_info']) ? wp_kses_post(wp_unslash($_POST['course_additional_info'])) : '';
+
+  update_post_meta($post_id, 'course_status', $status);
+  update_post_meta($post_id, 'ects_number', $ects_number);
+  update_post_meta($post_id, 'course_reg', $reg);
+  update_post_meta($post_id, 'course_reg_link', $reg_link);
+  update_post_meta($post_id, 'course_contact_email', $contact);
+  update_post_meta($post_id, 'course_additional_info', $add_info);
+
+  /* -------------------------
+     ✅ Taxonomies (POST slugs => term_ids)
+     ------------------------- */
+  $tax_map = [
+    'university'            => 'course_university',
+    'format'                => 'course_format',
+    'target'                => 'course_target',
+    'language'              => 'course_language',
+    'semester_availability' => 'course_semester_availability',
+    'course_type'           => 'course_type',
+  ];
+
+  foreach ($tax_map as $post_key => $tax) {
+    $vals = isset($_POST[$post_key]) ? (array) wp_unslash($_POST[$post_key]) : [];
+    $vals = array_values(array_unique(array_filter(array_map('sanitize_title', $vals)))); // slugs
+
+    if (empty($vals)) continue;
+
+    // convert slug -> term_id (prevents WP trying to create terms)
+    $term_ids = [];
+    foreach ($vals as $slug) {
+      $term = get_term_by('slug', $slug, $tax);
+      if ($term && !is_wp_error($term)) {
+        $term_ids[] = (int) $term->term_id;
+      }
+    }
+
+    if (!empty($term_ids)) {
+      wp_set_post_terms($post_id, $term_ids, $tax, false); // replace
+    }
+  }
+
+  /* -------------------------
+     ✅ Lecturers
+     ------------------------- */
+  $lecturers = [];
+  $raw = $_POST['course_lecturers'] ?? [];
+  if (is_array($raw)) {
+    foreach ($raw as $row) {
+      $name  = sanitize_text_field(wp_unslash($row['name'] ?? ''));
+      $email = sanitize_email(wp_unslash($row['email'] ?? ''));
+      if ($name !== '') {
+        $lecturers[] = ['name' => $name, 'email' => $email];
+      }
+    }
+  }
+  update_post_meta($post_id, 'course_lecturers', $lecturers);
+
+  /* -------------------------
+     ✅ Flash message + clean redirect
+     ------------------------- */
+  $_SESSION['ppl_flash_success'] = '✅ Course submitted successfully!';
+
+  $ref = wp_get_referer() ?: home_url('/teacher/');
+  $ref = remove_query_arg(['ppl_success', 'ppl_error'], $ref); // cleanup old
+  wp_safe_redirect($ref);
+  exit;
+});

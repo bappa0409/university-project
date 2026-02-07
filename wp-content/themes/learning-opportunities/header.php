@@ -46,9 +46,8 @@
                   <li><a href="<?php echo esc_url(home_url('/')); ?>">Home</a></li>
                   <li><a class="is-active" href="<?php echo esc_url(home_url('/')); ?>">Learning Opportunities</a></li>
                   <li>
-                    <a href="#" id="openTeacherForm" class="teacher-trigger">
-                      Teacher
-                    </a>
+                    <a href="<?php echo esc_url(home_url('/teacher/')); ?>" class="teacher-trigger">Teacher</a>
+
                   </li>
                 </ul>
                 <?php
